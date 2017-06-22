@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 22-Jun-2017 18:40:50
+% Last Modified by GUIDE v2.5 22-Jun-2017 19:45:12
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -76,7 +76,7 @@ axis off
 axis image
 h = findall(0,'Type','uicontrol');
  set(h,'FontUnits','normalized');
-% set(0,'DefaultAxesFontSize',8);
+set(0,'DefaultAxesFontUnits','normalized');
 
 handles.output = hObject;
 guidata(hObject, handles);
@@ -204,16 +204,22 @@ function sampling_rate_Callback(hObject, eventdata, handles)
 function intervals_Callback(hObject, eventdata, handles)
 %Marking lines on the graphs    
     intervals = csv_to_mvar(get(handles.intervals,'String'));    
-    
+    clear_axes_lines(handles.plot3d);
+    set(handles.plot3d,'YTickLabel',[]);
+    set(handles.plot_pow,'YTickLabel',[]);
+    grid(handles.plot_pow,'on');
+    grid(handles.plot3d,'on');
+    %set(handles.plot_pow, 'YTickMode', 'auto', 'YTickLabelMode', 'auto')
+    set(handles.plot3d, 'YTickMode', 'auto', 'YTickLabelMode', 'auto')
     if(size(intervals)>0)
-        zval = handles.peak_value;
+        zval = 1;
         child_handles = allchild(handles.wt_pane);
         for i = 1:size(child_handles,1)
             
             if(strcmp(get(child_handles(i),'Type'),'axes'))
                 set(child_handles(i),'Ytick',intervals);
-                hold(child_handles(i),'on');
-                                
+                set(child_handles(i),'YTickLabel',intervals);
+                hold(child_handles(i),'on');                                          
                 for j = 1:size(intervals,2)
                     xl = get(child_handles(i),'xlim');
                     x = [xl(1) xl(2)];        
@@ -226,6 +232,13 @@ function intervals_Callback(hObject, eventdata, handles)
                 
                 hold(child_handles(i),'off');
             end          
+        end
+    else
+        child_handles = allchild(handles.plot_pow);
+        for i = 1:size(child_handles,1)-1    
+            if(strcmp(get(child_handles(i),'Type'),'line'))                                
+                    delete(child_handles(i));                
+            end
         end
     end
 
@@ -268,7 +281,7 @@ function preprocess_Callback(hObject, eventdata, handles)
     plot(handles.plot_pp,time_axis,sig);
     hold(handles.plot_pp,'on');
     plot(handles.plot_pp,time_axis,new_signal,'-r');
-    legend(handles.plot_pp,'Original','Pre-Processed','Location','Best');
+    %legend(handles.plot_pp,'Original','Pre-Processed','Location','Best');
     xlim(handles.plot_pp,[0,size(sig,1)./fs]);
     xlabel(handles.plot_pp,{'Time (s)'});
     
@@ -276,18 +289,17 @@ function preprocess_Callback(hObject, eventdata, handles)
 
 function signal_list_Callback(hObject, eventdata, handles)
 %Selecting signal and calling other necessary functions
-    signal_selected = get(handles.signal_list,'Value');
-    fs = str2double(get(handles.sampling_freq,'String'));    
-    plot(handles.time_series,handles.time_axis,handles.sig(signal_selected,:));%Plotting the time_series part afte calculation of appropriate limits
-    xlim(handles.time_series,[0,size(handles.sig,2)./fs]);
-    xlabel(handles.time_series,'Time (s)');
-
+    signal_selected = get(handles.signal_list, 'Value');
+    fs = str2double(get(handles.sampling_freq, 'String'));    
+    plot(handles.time_series, handles.time_axis, handles.sig(signal_selected,:));%Plotting the time_series part afte calculation of appropriate limits
+    xl = csv_to_mvar(get(handles.xlim, 'String'));
+    xlim(handles.time_series, xl);
+    xlabel(handles.time_series, 'Time (s)');
     refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box
-
-    cla(handles.plot_pp,'reset');
+    cla(handles.plot_pp, 'reset');
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
-    xlabel(handles.time_series,'Time (s)');
-    set(handles.status,'String','Select Data And Continue With Wavelet Transform');
+    xlabel(handles.time_series, 'Time (s)');
+    set(handles.status, 'String', 'Select Data And Continue With Wavelet Transform');
     xyplot_Callback(hObject, eventdata, handles);
     
     
@@ -322,8 +334,17 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
       errordlg('Signal not found','Signal Error');
     end
     sig = handles.sig;    % do not optimise as the signal is being cut in this case
+    
     under_sample = size(sig,2)/1000;%TODO improve reliability with screens
-    handles.time_axis_us = handles.time_axis(1:under_sample:end);
+    
+    xl = csv_to_mvar(get(handles.xlim,'String'));
+    xl = xl.*fs;
+    xl(2) = min(xl(2),size(sig,2));
+    xl(1) = max(xl(1),1);
+    xl = xl./fs;
+    time_axis = xl(1):1/fs:xl(2);
+    
+    handles.time_axis_us = time_axis(1:under_sample:end);
     n = size(handles.sig,1) ;
     handles.WT = cell(n, 1);
     
@@ -461,73 +482,11 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     xyplot_Callback(hObject, eventdata, handles);
     guidata(hObject,handles);
 
-% function plot_Callback(hObject, eventdata, handles)
-% %Plot button for faster plotting and reming the need to calculate wavelet tranform everytime    
-%     
-%     fs = str2double(get(handles.sampling_freq,'String'));
-%     xl = csv_to_mvar(get(handles.xlim,'String'));
-%     n = str2double(get(handles.sampling_rate,'String'));
-%     
-% %     if n>1
-% %         n = 1;
-% %     elseif n<=0.1
-% %         n = 0.1;
-% %     else
-% %         n = 1/n;
-% %     end
-%        
-%     xl = xl.*fs;
-%     xl(2) = min(xl(2),size(handles.sig,1));
-%     xl(1) = max(xl(1),1);
-%     xl = xl./fs;    
-%     time_axis = xl(1):1/fs:xl(2);
-%     
-%     if(handles.plot_type == 1)        
-%         handles.peak_value = max(handles.pow_WT(:))+.1;
-%         surf(handles.plot3d, time_axis(1:n:end) ,handles.freqarr, handles.pow_WT(1:end,1:n:end)); 
-%         shading(handles.plot3d,'interp');
-% 
-%         set(handles.plot3d,'yscale','log');
-%         set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
-%         set(handles.plot3d,'xlim',[time_axis(1) time_axis(end)]);%making the axes tight
-%         xlabel(handles.plot3d,'Time (s)');
-%         ylabel(handles.plot3d,'Frequency (Hz)');
-%     
-%     else                
-%         handles.peak_value = max(handles.amp_WT(:))+.1;
-%         surf(handles.plot3d, time_axis(1:n:end) ,handles.freqarr, handles.amp_WT(1:end,1:n:end));         
-%         shading(handles.plot3d,'interp');
-% 
-%         set(handles.plot3d,'yscale','log');
-%         set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
-%         set(handles.plot3d,'xlim',[time_axis(1) time_axis(end)]);%making the axes tight
-%         xlabel(handles.plot3d,'Time (s)');
-%         ylabel(handles.plot3d,'Frequency (Hz)');
-%     end
-% 
-%     %------------------------Power Plot------------------------------------   
-%     if(handles.plot_type == 1)               
-%         plot(handles.plot_pow ,handles.pow_arr, handles.freqarr,'-k','LineWidth',3 );
-%     else   
-%         plot(handles.plot_pow ,handles.amp_arr, handles.freqarr,'-k','LineWidth',3 );
-%     end
-%         
-%     set(handles.plot_pow,'yscale','log');
-% 
-%     ylim(handles.plot_pow,[min(handles.freqarr) max(handles.freqarr)]);
-%     set(handles.status,'String','Done Plotting');
-%     if(handles.plot_type == 1)       
-%         xlabel(handles.plot_pow,'Average Power');
-%     else   
-%         xlabel(handles.plot_pow,'Average Amplitude');
-%     end
-%     %ylabel(handles.plot_pow,'Frequency (Hz)');
-
 function xyplot_Callback(hObject, eventdata, handles)
 %Rotates view point to look down from z-axis
            
     signal_selected = get(handles.signal_list,'Value');  
-    
+
     if(handles.plot_type == 1)      
         WTpow = handles.pow_WT{signal_selected,1};
         handles.peak_value = max(WTpow(:))+.1;
@@ -541,17 +500,19 @@ function xyplot_Callback(hObject, eventdata, handles)
         plot(handles.plot_pow ,handles.amp_arr{signal_selected,1}, handles.freqarr,'-k','LineWidth',3 );
         xlabel(handles.plot_pow,'Average Amplitude');
     end
-    
+    c = colorbar(handles.plot3d,'Location','east');
+    set(c, 'position',[0.74 .151 .03 .787]);
     shading(handles.plot3d,'interp');
     set(handles.plot3d,'yscale','log');
     set(handles.plot_pow,'yscale','log');
+    set(handles.plot_pow,'yticklabel',[]);
     set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
     set(handles.plot3d,'xlim',[handles.time_axis_us(1) handles.time_axis_us(end)]);%making the axes tight
     xlabel(handles.plot3d,'Time (s)');
     ylabel(handles.plot3d,'Frequency (Hz)');        
     ylim(handles.plot_pow,[min(handles.freqarr) max(handles.freqarr)]);
     set(handles.status,'String','Done Plotting');
-
+    
 % --------------------------------------------------------------------
 function file_Callback(hObject, eventdata, handles)
 %Loading data
@@ -589,7 +550,6 @@ function csv_read_Callback(hObject, eventdata, handles)
     cla(handles.plot_pp,'reset');
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series,'Time (s)');
-    %ylabel(handles.time_series,'Amplitude');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
     set(handles.signal_length,'String',size(sig,2));
 
@@ -628,7 +588,6 @@ function mat_read_Callback(hObject, eventdata, handles)
     cla(handles.plot_pp,'reset');
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series,'Time (s)');
-    %ylabel(handles.time_series,'Amplitude');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
     set(handles.signal_length,'String',size(sig,2));
     guidata(hObject,handles);    
@@ -828,8 +787,3 @@ xl(2) = min(xl(2),size(handles.sig,1));
 xl(1) = max(xl(1),1);
 sig = sig(xl(1):xl(2),1);
 save(save_location,'sig');
-
-
-
-
-
