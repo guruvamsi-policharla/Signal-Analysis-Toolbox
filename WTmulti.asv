@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 22-Jun-2017 15:26:29
+% Last Modified by GUIDE v2.5 22-Jun-2017 18:40:50
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -84,12 +84,6 @@ function varargout = WTmulti_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 function plot_type_CreateFcn(hObject, eventdata, handles)
 function wavlet_transform_CreateFcn(hObject, eventdata, handles)
-function signal_name_Callback(hObject, eventdata, handles)
-function signal_name_CreateFcn(hObject, eventdata, handles)
-
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
 function orientation_Callback(hObject, eventdata, handles)
 function orientation_CreateFcn(hObject, eventdata, handles)
 
@@ -179,6 +173,10 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 function azimuthal_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+function signal_length_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -281,7 +279,6 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     fmax = str2double(get(handles.max_freq,'String'));
     fmin = str2double(get(handles.min_freq,'String'));
     fc =  str2double(get(handles.central_freq,'String'));
-    signal_selected = get(handles.signal_list,'Value');
 %Checking whether the sampling frequency is present or not
     if isnan(fs)
       errordlg('Sampling frequency must be specified','Parameter Error');
@@ -303,8 +300,9 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     if ~isfield(handles,'sig')
       errordlg('Signal not found','Signal Error');
     end
-    sig = handles.sig(signal_selected,:);    % do not optimise as the signal is being cut in this case
-    under_sample = size(sig,2)/1000;%TODO improve reliability wit
+    sig = handles.sig;    % do not optimise as the signal is being cut in this case
+    under_sample = size(sig,2)/1000;%TODO improve reliability with screens
+    handles.time_axis_us = handles.time_axis(1:under_sample:end);
     n = size(handles.sig,1) ;
     handles.WT = cell(n, 1);
     
@@ -314,7 +312,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     xl = xl.*fs;
     xl(2) = min(xl(2),size(handles.sig,2));
     xl(1) = max(xl(1),1);
-    sig = sig(1,xl(1):xl(2));
+    sig = sig(:,xl(1):xl(2));
     
     set(handles.status,'String','Calculating Wavelet Transform...');
     
@@ -327,66 +325,115 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     if(isnan(fmax)&& isnan(fmin))
         if(isnan(fc))
             for p = 1:n
-            [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
-                'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
-            
-            WTamp = abs(WT);
-            WTpow = abs(WT).^2;
-            handles.pow_arr{p,1} = nanmean(handles.WTpow.');%Calculating Average Power
-            handles.amp_arr{p,1} = nanmean(handles.WTamp.');%Calculating Average Amplitude  
-            
-            handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
-            handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+                [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
+
+                WTamp = abs(WT);
+                WTpow = abs(WT).^2;
+                handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
+                handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
+
+                handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
 
             end
         else
             for p = 1:n
-            [handles.WT{p,1},handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
-                'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
-            end
+                [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
+                WTamp = abs(WT);
+                WTpow = abs(WT).^2;
+                handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
+                handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
+
+                handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+            end           
         end
     elseif(isnan(fmax))
         if(isnan(fc))
             for p = 1:n
-            [handles.WT{p,1},handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
-                'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+
+                WTamp = abs(WT);
+                WTpow = abs(WT).^2;
+                handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
+                handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
+
+                handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
             end
         else
             for p = 1:n
-            [handles.WT{p,1},handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
-                'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+
+                WTamp = abs(WT);
+                WTpow = abs(WT).^2;
+                handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
+                handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
+
+                handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
             end
         end
     elseif(isnan(fmin))
         if(isnan(fc))
             for p = 1:n
-            [handles.WT{p,1},handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
-                'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+
+                WTamp = abs(WT);
+                WTpow = abs(WT).^2;
+                handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
+                handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
+
+                handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
             end
         else
             for p = 1:n
-            [handles.WT{p,1},handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
-                'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+
+                WTamp = abs(WT);
+                WTpow = abs(WT).^2;
+                handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
+                handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
+
+                handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
             end
         end
     else
         if(isnan(fc))
             for p = 1:n
-            [handles.WT{p,1},handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
-                'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+
+                WTamp = abs(WT);
+                WTpow = abs(WT).^2;
+                handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
+                handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
+
+                handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
             end
         else
             for p = 1:n
-            [handles.WT{p,1},handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
-                'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+
+                WTamp = abs(WT);
+                WTpow = abs(WT).^2;
+                handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
+                handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
+
+                handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
             end
         end
-    end
-    
-    %write the averaging function and the max function
-    
-    for p = 1:n
-        
     end
     
     guidata(hObject,handles);
@@ -457,59 +504,33 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
 function xyplot_Callback(hObject, eventdata, handles)
 %Rotates view point to look down from z-axis
-        
-    fs = str2double(get(handles.sampling_freq,'String'));
-    xl = csv_to_mvar(get(handles.xlim,'String'));
-    signal_selected = get(handles.signal_list,'Value');
-    n = size(sig,2)/1000;
-       
-    xl = xl.*fs;
-    xl(2) = min(xl(2),size(handles.sig,1));
-    xl(1) = max(xl(1),1);
-    xl = xl./fs;    
-    time_axis = xl(1):1/fs:xl(2);
+           
+    signal_selected = get(handles.signal_list,'Value');  
     
-    if(handles.plot_type == 1)        
-        handles.peak_value = max(handles.pow_WT(:))+.1;
-        pcolor(handles.plot3d, time_axis(1:n:end) ,handles.freqarr, handles.pow_WT(1:end,1:n:end)); 
-        shading(handles.plot3d,'interp');
-
-        set(handles.plot3d,'yscale','log');
-        set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
-        set(handles.plot3d,'xlim',[time_axis(1) time_axis(end)]);%making the axes tight
-        xlabel(handles.plot3d,'Time (s)');
-        ylabel(handles.plot3d,'Frequency (Hz)');
-    
-    else                
-        handles.peak_value = max(handles.amp_WT(:))+.1;
-        pcolor(handles.plot3d, time_axis(1:n:end) ,handles.freqarr, handles.amp_WT(1:end,1:n:end)); 
-        shading(handles.plot3d,'interp');
-
-        set(handles.plot3d,'yscale','log');
-        set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
-        set(handles.plot3d,'xlim',[time_axis(1) time_axis(end)]);%making the axes tight
-        xlabel(handles.plot3d,'Time (s)');
-        ylabel(handles.plot3d,'Frequency (Hz)');
-    end
-
-    %------------------------Power Plot------------------------------------   
-    if(handles.plot_type == 1)               
-        plot(handles.plot_pow ,handles.pow_arr, handles.freqarr,'-k','LineWidth',3 );
-    else   
-        plot(handles.plot_pow ,handles.amp_arr, handles.freqarr,'-k','LineWidth',3 );
-    end
-        
-    set(handles.plot_pow,'yscale','log');
-
-    ylim(handles.plot_pow,[min(handles.freqarr) max(handles.freqarr)]);
-    set(handles.status,'String','Done Plotting');
-    if(handles.plot_type == 1)       
+    if(handles.plot_type == 1)      
+        WTpow = handles.pow_WT{signal_selected,1};
+        handles.peak_value = max(WTpow(:))+.1;
+        pcolor(handles.plot3d, handles.time_axis_us , handles.freqarr, WTpow(1:end,1:end));                
+        plot(handles.plot_pow ,handles.pow_arr{signal_selected,1}, handles.freqarr,'-k','LineWidth',3 );     
         xlabel(handles.plot_pow,'Average Power');
-    else   
+    else        
+        WTamp = handles.amp_WT{signal_selected,1};
+        handles.peak_value = max(WTamp(:))+.1;
+        pcolor(handles.plot3d, handles.time_axis_us , handles.freqarr, WTamp(1:end,1:end));         
+        plot(handles.plot_pow ,handles.amp_arr{signal_selected,1}, handles.freqarr,'-k','LineWidth',3 );
         xlabel(handles.plot_pow,'Average Amplitude');
     end
-   % ylabel(handles.plot_pow,'Frequency (Hz)');
     
+    shading(handles.plot3d,'interp');
+    set(handles.plot3d,'yscale','log');
+    set(handles.plot_pow,'yscale','log');
+    set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
+    set(handles.plot3d,'xlim',[handles.time_axis_us(1) handles.time_axis_us(end)]);%making the axes tight
+    xlabel(handles.plot3d,'Time (s)');
+    ylabel(handles.plot3d,'Frequency (Hz)');        
+    ylim(handles.plot_pow,[min(handles.freqarr) max(handles.freqarr)]);
+    set(handles.status,'String','Done Plotting');
+
 % --------------------------------------------------------------------
 function file_Callback(hObject, eventdata, handles)
 %Loading data
@@ -800,9 +821,9 @@ cla(handles.plot_pp,'reset');
 preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
 xlabel(handles.time_series,'Time (s)');
 set(handles.status,'String','Select Data And Continue With Wavelet Transform');
+xyplot_Callback(hObject, eventdata, handles);
 
-function signal_list_CreateFcn(hObject, eventdata, handles)
 
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+function signal_length_Callback(hObject, eventdata, handles)
+
+

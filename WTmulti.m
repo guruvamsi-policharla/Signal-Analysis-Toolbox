@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 22-Jun-2017 15:26:29
+% Last Modified by GUIDE v2.5 22-Jun-2017 18:40:50
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -84,12 +84,6 @@ function varargout = WTmulti_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 function plot_type_CreateFcn(hObject, eventdata, handles)
 function wavlet_transform_CreateFcn(hObject, eventdata, handles)
-function signal_name_Callback(hObject, eventdata, handles)
-function signal_name_CreateFcn(hObject, eventdata, handles)
-
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
 function orientation_Callback(hObject, eventdata, handles)
 function orientation_CreateFcn(hObject, eventdata, handles)
 
@@ -182,7 +176,15 @@ function azimuthal_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
+function signal_length_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+function signal_list_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+function signal_length_Callback(hObject, eventdata, handles)
 %--------------------------------------------------Unused Callbacks--------
 %Message display service 
 function status_Callback(hObject, eventdata, handles, msg)
@@ -272,6 +274,23 @@ function preprocess_Callback(hObject, eventdata, handles)
     
     guidata(hObject,handles);
 
+function signal_list_Callback(hObject, eventdata, handles)
+%Selecting signal and calling other necessary functions
+    signal_selected = get(handles.signal_list,'Value');
+    fs = str2double(get(handles.sampling_freq,'String'));    
+    plot(handles.time_series,handles.time_axis,handles.sig(signal_selected,:));%Plotting the time_series part afte calculation of appropriate limits
+    xlim(handles.time_series,[0,size(handles.sig,2)./fs]);
+    xlabel(handles.time_series,'Time (s)');
+
+    refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box
+
+    cla(handles.plot_pp,'reset');
+    preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
+    xlabel(handles.time_series,'Time (s)');
+    set(handles.status,'String','Select Data And Continue With Wavelet Transform');
+    xyplot_Callback(hObject, eventdata, handles);
+    
+    
 function wavlet_transform_Callback(hObject, eventdata, handles)
 %Does the wavelet transform 
 
@@ -549,9 +568,8 @@ function csv_read_Callback(hObject, eventdata, handles)
     end
     
     sig = read_from_csv();
-    %sig = sig(:);
     
-   list = 'Signal 1';
+    list = 'Signal 1';
     for i = 2:size(sig,1)
         list = strcat(list,sprintf('\nSignal %d',i));
     end
@@ -573,6 +591,7 @@ function csv_read_Callback(hObject, eventdata, handles)
     xlabel(handles.time_series,'Time (s)');
     %ylabel(handles.time_series,'Amplitude');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
+    set(handles.signal_length,'String',size(sig,2));
 
 
 % --------------------------------------------------------------------
@@ -588,7 +607,6 @@ function mat_read_Callback(hObject, eventdata, handles)
     sig = read_from_mat();
     sig = struct2cell(sig);
     sig = cell2mat(sig);
-    %sig=sig(:);
 
     list = 'Signal 1';
     for i = 2:size(sig,1)
@@ -612,6 +630,7 @@ function mat_read_Callback(hObject, eventdata, handles)
     xlabel(handles.time_series,'Time (s)');
     %ylabel(handles.time_series,'Amplitude');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
+    set(handles.signal_length,'String',size(sig,2));
     guidata(hObject,handles);    
     
 
@@ -810,22 +829,7 @@ xl(1) = max(xl(1),1);
 sig = sig(xl(1):xl(2),1);
 save(save_location,'sig');
 
-function signal_list_Callback(hObject, eventdata, handles)
-signal_selected = get(handles.signal_list,'Value');
-fs = str2double(get(handles.sampling_freq,'String'));    
-plot(handles.time_series,handles.time_axis,handles.sig(signal_selected,:));%Plotting the time_series part afte calculation of appropriate limits
-xlim(handles.time_series,[0,size(handles.sig,2)./fs]);
-xlabel(handles.time_series,'Time (s)');
 
-refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box
 
-cla(handles.plot_pp,'reset');
-preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
-xlabel(handles.time_series,'Time (s)');
-set(handles.status,'String','Select Data And Continue With Wavelet Transform');
-xyplot_Callback(hObject, eventdata, handles);
-function signal_list_CreateFcn(hObject, eventdata, handles)
 
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+
