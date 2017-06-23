@@ -209,7 +209,6 @@ function intervals_Callback(hObject, eventdata, handles)
     set(handles.plot_pow,'YTickLabel',[]);
     grid(handles.plot_pow,'on');
     grid(handles.plot3d,'on');
-    %set(handles.plot_pow, 'YTickMode', 'auto', 'YTickLabelMode', 'auto')
     set(handles.plot3d, 'YTickMode', 'auto', 'YTickLabelMode', 'auto')
     if(size(intervals)>0)
         zval = 1;
@@ -227,9 +226,7 @@ function intervals_Callback(hObject, eventdata, handles)
                     z = z.*zval;
                     y = intervals(j)*ones(1,size(x,2));
                     plot3(child_handles(i),x,y,z,'--k');
-                end
-                
-                
+                end                           
                 hold(child_handles(i),'off');
             end          
         end
@@ -290,7 +287,6 @@ function preprocess_Callback(hObject, eventdata, handles)
 function signal_list_Callback(hObject, eventdata, handles)
 %Selecting signal and calling other necessary functions
     signal_selected = get(handles.signal_list, 'Value');
-    fs = str2double(get(handles.sampling_freq, 'String'));    
     plot(handles.time_series, handles.time_axis, handles.sig(signal_selected,:));%Plotting the time_series part afte calculation of appropriate limits
     xl = csv_to_mvar(get(handles.xlim, 'String'));
     xlim(handles.time_series, xl);
@@ -301,7 +297,7 @@ function signal_list_Callback(hObject, eventdata, handles)
     xlabel(handles.time_series, 'Time (s)');
     set(handles.status, 'String', 'Select Data And Continue With Wavelet Transform');
     xyplot_Callback(hObject, eventdata, handles);
-    
+    intervals_Callback(hObject, eventdata, handles)
     
 function wavlet_transform_Callback(hObject, eventdata, handles)
 %Does the wavelet transform 
@@ -480,6 +476,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     
     guidata(hObject,handles);
     xyplot_Callback(hObject, eventdata, handles);
+    intervals_Callback(hObject, eventdata, handles)
     guidata(hObject,handles);
 
 function xyplot_Callback(hObject, eventdata, handles)
@@ -552,7 +549,7 @@ function csv_read_Callback(hObject, eventdata, handles)
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series,'Time (s)');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
-    set(handles.signal_length,'String',size(sig,2));
+    set(handles.signal_length,'String',strcat(size(sig,2)/fs/60,' minutes'));
 
 
 % --------------------------------------------------------------------
@@ -590,7 +587,7 @@ function mat_read_Callback(hObject, eventdata, handles)
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series,'Time (s)');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
-    set(handles.signal_length,'String',size(sig,2));
+    set(handles.signal_length,'String',strcat(num2str(size(sig,2)/fs/60),' minutes'));
     guidata(hObject,handles);    
     
 
