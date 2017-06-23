@@ -501,7 +501,8 @@ function xyplot_Callback(hObject, eventdata, handles)
         xlabel(handles.plot_pow,'Average Amplitude');
     end
     c = colorbar(handles.plot3d,'Location','east');
-    set(c, 'position',[0.74 .151 .03 .787]);
+    set(c, 'position',[0.71 .12 .015 .85],'Linewidth',0.2);
+    set(c, 'fontsize',8);
     shading(handles.plot3d,'interp');
     set(handles.plot3d,'yscale','log');
     set(handles.plot_pow,'yscale','log');
