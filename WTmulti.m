@@ -67,8 +67,7 @@ end
 
 function WTmulti_OpeningFcn(hObject, eventdata, handles, varargin)
 %screensize = get( groot, 'Screensize' );
-
-
+movegui('center') 
 axes(handles.Logo)
 matlabImage = imread('logo.jpg');
 image(matlabImage)
@@ -537,11 +536,26 @@ function csv_read_Callback(hObject, eventdata, handles)
     
     sig = read_from_csv();
     
+    % Construct a questdlg with three options
+    choice = questdlg('Select Orientation of Data set?', ...
+        'Data Import','Column wise','Row wise','default');
+    switch choice
+        case 'Column wise'
+            sig = sig';
+            msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
+        case 'Row wise'
+            msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
+        case 'default'
+            errordlg('Data set orientation must be specified')
+            return;
+    end
+    
     list = 'Signal 1';
     for i = 2:size(sig,1)
-        list = strcat(list,sprintf('\n Signal %d',i));
+        list = strcat(list,sprintf('\nSignal %d',i));
     end
     set(handles.signal_list,'String',list);
+    
     handles.sig = sig;   
     time = 1:size(sig,2);
     time = time./fs;
@@ -574,19 +588,32 @@ function mat_read_Callback(hObject, eventdata, handles)
     sig = read_from_mat();
     sig = struct2cell(sig);
     sig = cell2mat(sig);
-
+    
+    % Construct a questdlg with three options
+    choice = questdlg('Select Orientation of Data set?', ...
+        'Data Import','Column wise','Row wise','default');
+    switch choice
+        case 'Column wise'
+            sig = sig';
+            msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
+        case 'Row wise'
+            msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
+        case 'default'
+            errordlg('Data set orientation must be specified')
+            return;
+    end
+    
     list = 'Signal 1';
     for i = 2:size(sig,1)
-        temp = sprintf(sprintf('\nSignal %d',i));
-        list = strcat(list,temp);
+        list = strcat(list,sprintf('\nSignal %d',i));
     end
     set(handles.signal_list,'String',list);
+    
     handles.sig = sig;   
     time = 1:size(sig,2);
     time = time./fs;
     handles.time_axis = time;
     
-
     plot(handles.time_series,time,sig(1,:));%Plotting the time_series part afte calculation of appropriate limits
     xlim(handles.time_series,[0,size(sig,2)./fs]);
     xlabel(handles.time_series,'Time (s)');
@@ -701,9 +728,6 @@ save_location = strcat(PathName,FileName)
 WavTr.WT = handles.WT;
 WavTr.freqarr = handles.freqarr;
 save(save_location,'WavTr','-v7.3');
-% [FileName,PathName] = uiputfile
-% save_location = strcat(PathName,FileName)
-% save(save_location,'WT','-v7.3');%Sometimes the compression is faulty
 
 function save_wt_csv_Callback(hObject, eventdata, handles)
 %Saves the wavelet transform in .csv format
