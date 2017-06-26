@@ -75,7 +75,7 @@ image(matlabImage)
 axis off
 axis image
 h = findall(0,'Type','uicontrol');
- set(h,'FontUnits','normalized');
+set(h,'FontUnits','normalized');
 set(0,'DefaultAxesFontUnits','normalized');
 
 handles.output = hObject;
@@ -296,7 +296,9 @@ function signal_list_Callback(hObject, eventdata, handles)
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series, 'Time (s)');
     set(handles.status, 'String', 'Select Data And Continue With Wavelet Transform');
-    xyplot_Callback(hObject, eventdata, handles);
+    if isfield(handles,'amp_WT')
+        xyplot_Callback(hObject, eventdata, handles);
+    end    
     intervals_Callback(hObject, eventdata, handles)
     
 function wavlet_transform_Callback(hObject, eventdata, handles)
@@ -530,7 +532,7 @@ function csv_read_Callback(hObject, eventdata, handles)
     
     list = 'Signal 1';
     for i = 2:size(sig,1)
-        list = strcat(list,sprintf('\nSignal %d',i));
+        list = strcat(list,sprintf('\n Signal %d',i));
     end
     set(handles.signal_list,'String',list);
     handles.sig = sig;   
@@ -568,7 +570,8 @@ function mat_read_Callback(hObject, eventdata, handles)
 
     list = 'Signal 1';
     for i = 2:size(sig,1)
-        list = strcat(list,sprintf('\nSignal %d',i));
+        temp = sprintf(sprintf('\nSignal %d',i));
+        list = strcat(list,temp);
     end
     set(handles.signal_list,'String',list);
     handles.sig = sig;   
