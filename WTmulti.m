@@ -333,7 +333,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     end
     sig = handles.sig;    % do not optimise as the signal is being cut in this case
     
-    under_sample = size(sig,2)/1000;%TODO improve reliability with screens
+    under_sample = floor(size(sig,2)/1000);%TODO improve reliability with screens
     
     xl = csv_to_mvar(get(handles.xlim,'String'));
     xl = xl.*fs;
@@ -360,7 +360,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     handles.pow_WT = cell(n,1);
     handles.pow_arr = cell(n,1);
     handles.amp_arr = cell(n,1);
-    
+    h = waitbar(0,'Calculating Wavelet Transform of Signal 1');
     %Calculating wavelet transform
     if(isnan(fmax)&& isnan(fmin))
         if(isnan(fc))
@@ -374,8 +374,8 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
                 handles.amp_arr{p,1} = nanmean(WTamp.');%Calculating Average Amplitude  
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
-                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
-
+                handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);              
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p+1));
             end
         else
             for p = 1:n
@@ -388,6 +388,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
             end           
         end
     elseif(isnan(fmax))
@@ -403,6 +404,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
             end
         else
             for p = 1:n
@@ -416,6 +418,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
             end
         end
     elseif(isnan(fmin))
@@ -431,6 +434,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
             end
         else
             for p = 1:n
@@ -444,6 +448,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
             end
         end
     else
@@ -459,6 +464,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
             end
         else
             for p = 1:n
@@ -472,10 +478,11 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
             end
         end
     end
-    
+    delete(h);
     guidata(hObject,handles);
     xyplot_Callback(hObject, eventdata, handles);
     intervals_Callback(hObject, eventdata, handles)

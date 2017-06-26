@@ -454,7 +454,7 @@ end
 %Wavelet transform by itself
 WT=zeros(SN,L)*NaN; ouflag=0; if (wp.t2e-wp.t1e)*wp.ompeak/(2*pi*fmax)>L/fs, coib1(:)=0; coib2(:)=0; end
 if ~isempty(strfind(lower(DispMode),'on')), pos=0; fprintf('Calculating Wavelet Transform (%d frequencies from %0.3f to %0.3f): ',SN,freq(1),freq(end)); end
-h = waitbar(0,'Calculating Wavelet Transform...');
+%h = waitbar(0,'Calculating Wavelet Transform...');
 for sn=1:SN
     freqwf=ff*wp.ompeak/(2*pi*freq(sn)); %frequencies for the wavelet function
     ii=find(freqwf>wp.xi1/2/pi & freqwf<wp.xi2/2/pi); %take into account only frequencies within the wavelet support
@@ -483,9 +483,9 @@ for sn=1:SN
     if ~isempty(strfind(lower(DispMode),'on')) && floor(100*sn/SN)>floor(100*(sn-1)/SN)
         cstr=num2str(floor(100*sn/SN)); fprintf([repmat('\b',1,pos),cstr,'%%']); pos=length(cstr)+1;
     end
-    waitbar(sn / SN);
+    %waitbar(sn / SN);
 end
-close(h);
+%close(h);
 if ~isempty(strfind(lower(DispMode),'on')), fprintf('\n'); end
 if ouflag==1
     if ~isempty(fwt)
