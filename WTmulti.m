@@ -528,6 +528,14 @@ function xyplot_Callback(hObject, eventdata, handles)
         set(handles.cum_avg,'visible','on');
         hold(handles.cum_avg,'on');
         size(handles.sig,1)
+        if(handles.plot_type == 1)       
+            plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.pow_arr)),'--','Linewidth',3);
+            plot(handles.cum_avg, handles.freqarr, median(cell2mat(handles.pow_arr)),'-','Linewidth',3);
+        else
+            plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.amp_arr)),'--','Linewidth',3);
+            plot(handles.cum_avg, handles.freqarr, median(cell2mat(handles.amp_arr)),'-','Linewidth',3);
+        end
+        legend(handles.cum_avg,'mean','median')
         for i = 1:size(signal_selected,2)            
             if(handles.plot_type == 1 && signal_selected(i) <= size(handles.sig,1))                                
                 plot(handles.cum_avg, handles.freqarr, handles.pow_arr{signal_selected(i),1});     
