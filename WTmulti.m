@@ -75,7 +75,7 @@ axis off
 axis image
 h = findall(0,'Type','uicontrol');
 set(h,'FontUnits','normalized');
-set(gcbo,'DefaultAxesFontUnits','normalized');
+%set(gcbo,'DefaultAxesFontUnits','normalized');
 
 handles.output = hObject;
 guidata(hObject, handles);
@@ -279,8 +279,8 @@ function preprocess_Callback(hObject, eventdata, handles)
     plot(handles.plot_pp,time_axis,new_signal,'-r');
     %legend(handles.plot_pp,'Original','Pre-Processed','Location','Best');
     xlim(handles.plot_pp,[0,size(sig,1)./fs]);
-    xlabel(handles.plot_pp,{'Time (s)'});
-    
+    set(handles.plot_pp,'Fontunits','normalized');
+    xlabel(handles.plot_pp,{'Time (s)'},'FontUnits','normalized');    
     guidata(hObject,handles);
 
 function signal_list_Callback(hObject, eventdata, handles)
@@ -575,7 +575,7 @@ function xyplot_Callback(hObject, eventdata, handles)
         end
         c = colorbar(handles.plot3d,'Location','east');
         set(c, 'position',[0.71 .12 .015 .85],'Linewidth',0.2);
-        set(c, 'fontsize',8);
+        set(c, 'fontsize',8,'units','normalized');
         shading(handles.plot3d,'interp');
         set(handles.plot3d,'yscale','log');
         set(handles.plot_pow,'yscale','log');
@@ -588,6 +588,8 @@ function xyplot_Callback(hObject, eventdata, handles)
         ylim(handles.plot_pow,[min(handles.freqarr) max(handles.freqarr)]);
         set(handles.status,'String','Done Plotting');
     end
+    set(handles.plot3d,'Fontunits','normalized');
+    set(handles.plot_pow,'Fontunits','normalized');
     guidata(hObject,handles);
 % --------------------------------------------------------------------
 function file_Callback(hObject, eventdata, handles)
