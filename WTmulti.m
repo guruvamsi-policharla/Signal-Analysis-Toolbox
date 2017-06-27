@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 22-Jun-2017 19:45:12
+% Last Modified by GUIDE v2.5 27-Jun-2017 16:25:54
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -75,7 +75,7 @@ axis off
 axis image
 h = findall(0,'Type','uicontrol');
 set(h,'FontUnits','normalized');
-set(0,'DefaultAxesFontUnits','normalized');
+set(gcbo,'DefaultAxesFontUnits','normalized');
 
 handles.output = hObject;
 guidata(hObject, handles);
@@ -184,8 +184,8 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 function signal_length_Callback(hObject, eventdata, handles)
+function plot_type_ButtonDownFcn(hObject, eventdata, handles)
 %--------------------------------------------------Unused Callbacks--------
-%Message display service 
 function status_Callback(hObject, eventdata, handles, msg)
 set(handles.status,'String',msg);
 %--------------------------------------------------------------------------
@@ -235,7 +235,7 @@ function intervals_Callback(hObject, eventdata, handles)
             if(strcmp(get(child_handles(i),'Type'),'line'))                                
                     delete(child_handles(i));                
             end
-        end
+        end       
     end
 
 function preprocess_Callback(hObject, eventdata, handles)
@@ -286,19 +286,40 @@ function preprocess_Callback(hObject, eventdata, handles)
 function signal_list_Callback(hObject, eventdata, handles)
 %Selecting signal and calling other necessary functions
     signal_selected = get(handles.signal_list, 'Value');
-    plot(handles.time_series, handles.time_axis, handles.sig(signal_selected,:));%Plotting the time_series part afte calculation of appropriate limits
-    xl = csv_to_mvar(get(handles.xlim, 'String'));
-    xlim(handles.time_series, xl);
-    xlabel(handles.time_series, 'Time (s)');
-    refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box
-    cla(handles.plot_pp, 'reset');
-    preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
-    xlabel(handles.time_series, 'Time (s)');
-    set(handles.status, 'String', 'Select Data And Continue With Wavelet Transform');
-    if isfield(handles,'amp_WT')
+    
+    if any(signal_selected == size(handles.sig,1)+1)
+        set(handles.signal_list,'Max',size(handles.sig,1));
+    else
+        if size(signal_selected,2) == 1
+            set(handles.signal_list,'Max',1);
+        else
+            set(handles.signal_list, 'Value', 1);
+            set(handles.signal_list,'Max',1);
+            drawnow;
+            xyplot_Callback(hObject, eventdata, handles);
+        end
+    end
+    
+    if any(signal_selected ~= size(handles.sig,1)+1) && length(signal_selected) == 1
+        plot(handles.time_series, handles.time_axis, handles.sig(signal_selected,:));%Plotting the time_series part afte calculation of appropriate limits
+        xl = csv_to_mvar(get(handles.xlim, 'String'));
+        xlim(handles.time_series, xl);
+        xlabel(handles.time_series, 'Time (s)');
+        refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box
+        cla(handles.plot_pp, 'reset');
+        preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
+        xlabel(handles.time_series, 'Time (s)');
+        set(handles.status, 'String', 'Select Data And Continue With Wavelet Transform');
+
+        if isfield(handles,'amp_WT')
+            xyplot_Callback(hObject, eventdata, handles);
+        end
+        intervals_Callback(hObject, eventdata, handles)
+    elseif any(signal_selected == size(handles.sig,1)+1)
         xyplot_Callback(hObject, eventdata, handles);
-    end    
-    intervals_Callback(hObject, eventdata, handles)
+        intervals_Callback(hObject, eventdata, handles)
+    end
+    
     
 function wavlet_transform_Callback(hObject, eventdata, handles)
 %Does the wavelet transform 
@@ -359,11 +380,12 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     handles.pow_WT = cell(n,1);
     handles.pow_arr = cell(n,1);
     handles.amp_arr = cell(n,1);
-    h = waitbar(0,'Calculating Wavelet Transform of Signal 1');
+    h = waitbar(0,'Calculating Wavelet Transform...');
     %Calculating wavelet transform
     if(isnan(fmax)&& isnan(fmin))
         if(isnan(fc))
             for p = 1:n
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
                 [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
 
@@ -374,10 +396,11 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);              
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p+1));
+                
             end
         else
             for p = 1:n
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
                 [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
                 WTamp = abs(WT);
@@ -387,12 +410,13 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
+               
             end           
         end
     elseif(isnan(fmax))
         if(isnan(fc))
             for p = 1:n
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
                 [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
 
@@ -403,10 +427,11 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
+                
             end
         else
             for p = 1:n
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
                 [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
 
@@ -417,12 +442,13 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
+                
             end
         end
     elseif(isnan(fmin))
         if(isnan(fc))
             for p = 1:n
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
                 [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
 
@@ -433,10 +459,11 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
+                
             end
         else
             for p = 1:n
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
                 [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
 
@@ -447,12 +474,13 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
+                
             end
         end
     else
         if(isnan(fc))
             for p = 1:n
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
                 [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
 
@@ -463,10 +491,11 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
+                
             end
         else
             for p = 1:n
+                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
                 [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
 
@@ -477,7 +506,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 
                 handles.amp_WT{p,1} = WTamp(:,1:under_sample:end);   
                 handles.pow_WT{p,1} = WTpow(:,1:under_sample:end);
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
+                
             end
         end
     end
@@ -488,37 +517,70 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     guidata(hObject,handles);
 
 function xyplot_Callback(hObject, eventdata, handles)
-%Rotates view point to look down from z-axis
-           
+%Plots all figures
     signal_selected = get(handles.signal_list,'Value');  
-
-    if(handles.plot_type == 1)      
-        WTpow = handles.pow_WT{signal_selected,1};
-        handles.peak_value = max(WTpow(:))+.1;
-        pcolor(handles.plot3d, handles.time_axis_us , handles.freqarr, WTpow(1:end,1:end));                
-        plot(handles.plot_pow ,handles.pow_arr{signal_selected,1}, handles.freqarr,'-k','LineWidth',3 );     
-        xlabel(handles.plot_pow,'Average Power');
-    else        
-        WTamp = handles.amp_WT{signal_selected,1};
-        handles.peak_value = max(WTamp(:))+.1;
-        pcolor(handles.plot3d, handles.time_axis_us , handles.freqarr, WTamp(1:end,1:end));         
-        plot(handles.plot_pow ,handles.amp_arr{signal_selected,1}, handles.freqarr,'-k','LineWidth',3 );
-        xlabel(handles.plot_pow,'Average Amplitude');
+    if any(signal_selected == size(handles.sig,1)+1)        
+        cla(handles.plot3d,'reset');
+        cla(handles.plot_pow,'reset');
+        cla(handles.cum_avg,'reset');
+        set(handles.plot3d,'visible','off');
+        set(handles.plot_pow,'visible','off');   
+        set(handles.cum_avg,'visible','on');
+        hold(handles.cum_avg,'on');
+        size(handles.sig,1)
+        for i = 1:size(signal_selected,2)            
+            if(handles.plot_type == 1 && signal_selected(i) <= size(handles.sig,1))                                
+                plot(handles.cum_avg, handles.freqarr, handles.pow_arr{signal_selected(i),1});     
+                ylabel(handles.cum_avg,'Average Power');
+                [M,I] = max(handles.pow_arr{signal_selected(i),1});
+                text(handles.cum_avg,handles.freqarr(I),M,num2str(signal_selected(i)));
+            elseif signal_selected(i) <= size(handles.sig,1)
+                plot(handles.cum_avg, handles.freqarr, handles.amp_arr{signal_selected(i),1});
+                ylabel(handles.cum_avg,'Average Amplitude');
+                [M,I] = max(handles.amp_arr{signal_selected(i),1});
+                text(handles.cum_avg,handles.freqarr(I),M,num2str(signal_selected(i)));
+            end
+            
+        end
+        set(handles.cum_avg,'xscale','log');
+        xlim(handles.cum_avg,[min(handles.freqarr) max(handles.freqarr)]);
+    else
+        cla(handles.cum_avg,'reset');
+        cla(handles.plot3d,'reset');
+        cla(handles.plot_pow,'reset');
+        set(handles.cum_avg,'visible','off');
+        set(handles.plot3d,'visible','on');
+        set(handles.plot_pow,'visible','on');
+        
+        if(handles.plot_type == 1)      
+            WTpow = handles.pow_WT{signal_selected,1};
+            handles.peak_value = max(WTpow(:))+.1;
+            pcolor(handles.plot3d, handles.time_axis_us , handles.freqarr, WTpow(1:end,1:end));                
+            plot(handles.plot_pow, handles.pow_arr{signal_selected,1}, handles.freqarr,'-k','LineWidth',3 );     
+            xlabel(handles.plot_pow,'Average Power');
+        else        
+            WTamp = handles.amp_WT{signal_selected,1};
+            handles.peak_value = max(WTamp(:))+.1;
+            pcolor(handles.plot3d, handles.time_axis_us , handles.freqarr, WTamp(1:end,1:end));         
+            plot(handles.plot_pow ,handles.amp_arr{signal_selected,1}, handles.freqarr,'-k','LineWidth',3 );
+            xlabel(handles.plot_pow,'Average Amplitude');
+        end
+        c = colorbar(handles.plot3d,'Location','east');
+        set(c, 'position',[0.71 .12 .015 .85],'Linewidth',0.2);
+        set(c, 'fontsize',8);
+        shading(handles.plot3d,'interp');
+        set(handles.plot3d,'yscale','log');
+        set(handles.plot_pow,'yscale','log');
+        set(handles.plot_pow,'yticklabel',[]);
+        set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
+        set(handles.plot3d,'xlim',[handles.time_axis_us(1) handles.time_axis_us(end)]);%making the axes tight
+        xlabel(handles.plot3d,'Time (s)');
+        ylabel(handles.plot3d,'Frequency (Hz)');    
+        ylabel(handles.plot_pow,'Frequency (Hz)');    
+        ylim(handles.plot_pow,[min(handles.freqarr) max(handles.freqarr)]);
+        set(handles.status,'String','Done Plotting');
     end
-    c = colorbar(handles.plot3d,'Location','east');
-    set(c, 'position',[0.71 .12 .015 .85],'Linewidth',0.2);
-    set(c, 'fontsize',8);
-    shading(handles.plot3d,'interp');
-    set(handles.plot3d,'yscale','log');
-    set(handles.plot_pow,'yscale','log');
-    set(handles.plot_pow,'yticklabel',[]);
-    set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
-    set(handles.plot3d,'xlim',[handles.time_axis_us(1) handles.time_axis_us(end)]);%making the axes tight
-    xlabel(handles.plot3d,'Time (s)');
-    ylabel(handles.plot3d,'Frequency (Hz)');        
-    ylim(handles.plot_pow,[min(handles.freqarr) max(handles.freqarr)]);
-    set(handles.status,'String','Done Plotting');
-    
+    guidata(hObject,handles);
 % --------------------------------------------------------------------
 function file_Callback(hObject, eventdata, handles)
 %Loading data
@@ -527,8 +589,7 @@ function file_Callback(hObject, eventdata, handles)
 function csv_read_Callback(hObject, eventdata, handles)
 %Read csv file
     set(handles.status,'String','Importing Signal...');
-    fs = str2double(get(handles.sampling_freq,'String'));    
-    
+    fs = str2double(get(handles.sampling_freq,'String'));     
     if isnan(fs)
       errordlg('Sampling frequency must be specified before importing','Parameter Error');
       return;
@@ -548,26 +609,22 @@ function csv_read_Callback(hObject, eventdata, handles)
         case 'default'
             errordlg('Data set orientation must be specified')
             return;
-    end
-    
+    end    
     list = 'Signal 1';
     for i = 2:size(sig,1)
         list = strcat(list,sprintf('\nSignal %d',i));
     end
-    set(handles.signal_list,'String',list);
-    
+    list = strcat(list,sprintf('\nAverage Plot(All)'));
+    set(handles.signal_list,'String',list);    
     handles.sig = sig;   
     time = 1:size(sig,2);
     time = time./fs;
     handles.time_axis = time;
     guidata(hObject,handles);    
-
     plot(handles.time_series,time,sig(1,:));%Plotting the time_series part afte calculation of appropriate limits
     xlim(handles.time_series,[0,size(sig,2)./fs]);
-    xlabel(handles.time_series,'Time (s)');
-    
-    refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box
-    
+    xlabel(handles.time_series,'Time (s)');    
+    refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box    
     cla(handles.plot_pp,'reset');
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series,'Time (s)');
@@ -602,12 +659,13 @@ function mat_read_Callback(hObject, eventdata, handles)
             errordlg('Data set orientation must be specified')
             return;
     end
-    
     list = 'Signal 1';
     for i = 2:size(sig,1)
         list = strcat(list,sprintf('\nSignal %d',i));
     end
     set(handles.signal_list,'String',list);
+    list = strcat(list,sprintf('\nAverage Plot(All)'));
+    set(handles.signal_list,'String',list); 
     
     handles.sig = sig;   
     time = 1:size(sig,2);
@@ -695,11 +753,29 @@ function plot_type_SelectionChangeFcn(hObject, eventdata, handles)
         case 'amp'
             plot_type = 2;
     end
-
-    data = guidata(hObject);
-    data.plot_type = plot_type;
-    guidata(hObject,data); 
-
+    intervals = csv_to_mvar(get(handles.intervals,'String'));  
+    child_handles = allchild(handles.wt_pane);
+    for i = 1:size(child_handles,1)
+        if(strcmp(get(child_handles(i),'Type'),'axes'))
+            set(child_handles(i),'Ytick',intervals);
+            set(child_handles(i),'YTickLabel',intervals);
+            hold(child_handles(i),'on');                                          
+            for j = 1:size(intervals,2)
+                xl = get(child_handles(i),'xlim');
+                x = [xl(1) xl(2)];        
+                z = ones(1,size(x,2));
+                z = z.*zval;
+                y = intervals(j)*ones(1,size(x,2));
+                plot3(child_handles(i),x,y,z,'--k');
+            end                           
+            hold(child_handles(i),'off');
+        end          
+    end
+    
+    handles.plot_type = plot_type;
+    guidata(hObject,handles); 
+    xyplot_Callback(hObject, eventdata, handles)
+    guidata(hObject,handles); 
 % ----------------------------------------Saving Files---------------
 function save_Callback(hObject, eventdata, handles)
 %Honestly you're just here because I don't know how to get rid of you
