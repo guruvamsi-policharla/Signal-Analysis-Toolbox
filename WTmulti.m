@@ -353,7 +353,6 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     end
     sig = handles.sig;    % do not optimise as the signal is being cut in this case
     
-    under_sample = floor(size(sig,2)/1000);%TODO improve reliability with screens
     
     xl = csv_to_mvar(get(handles.xlim,'String'));
     xl = xl.*fs;
@@ -361,7 +360,12 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     xl(1) = max(xl(1),1);
     xl = xl./fs;
     time_axis = xl(1):1/fs:xl(2);
-    
+    if length(time_axis)>=2000
+        screensize = max(get(groot,'Screensize'));
+        under_sample = floor(size(sig,2)/screensize);%TODO improve reliability with screens
+    else 
+        under_sample = 1;
+    end
     handles.time_axis_us = time_axis(1:under_sample:end);
     n = size(handles.sig,1) ;
     handles.WT = cell(n, 1);
