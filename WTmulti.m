@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 27-Jun-2017 16:25:54
+% Last Modified by GUIDE v2.5 28-Jun-2017 19:32:46
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -69,12 +69,15 @@ function WTmulti_OpeningFcn(hObject, eventdata, handles, varargin)
 %screensize = get( groot, 'Screensize' );
 movegui('center') 
 axes(handles.Logo)
-matlabImage = imread('logo.jpg');
+matlabImage = imread('physicslogo.png');
 image(matlabImage)
 axis off
 axis image
 h = findall(0,'Type','uicontrol');
 set(h,'FontUnits','normalized');
+handles.calc_type = 1;
+guidata(hObject,handles);
+drawnow;
 %set(gcbo,'DefaultAxesFontUnits','normalized');
 
 handles.output = hObject;
@@ -185,9 +188,11 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 function signal_length_Callback(hObject, eventdata, handles)
 function plot_type_ButtonDownFcn(hObject, eventdata, handles)
+function calc_type_CreateFcn(hObject, eventdata, handles)
 %--------------------------------------------------Unused Callbacks--------
 function status_Callback(hObject, eventdata, handles, msg)
 set(handles.status,'String',msg);
+drawnow;
 %--------------------------------------------------------------------------
 
 function azimuthal_Callback(hObject, eventdata, handles)
@@ -301,7 +306,7 @@ function signal_list_Callback(hObject, eventdata, handles)
     end
     
     if any(signal_selected ~= size(handles.sig,1)+1) && length(signal_selected) == 1
-        plot(handles.time_series, handles.time_axis, handles.sig(signal_selected,:));%Plotting the time_series part afte calculation of appropriate limits
+        plot(handles.time_series, handles.time_axis, handles.sig(signal_selected,:));%Plotting the time_series part after calculation of appropriate limits
         xl = csv_to_mvar(get(handles.xlim, 'String'));
         xlim(handles.time_series, xl);
         xlabel(handles.time_series, 'Time (s)');
@@ -366,6 +371,9 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     else 
         under_sample = 1;
     end
+    if handles.calc_type == 2
+        under_sample = ceil(under_sample*3.5);
+    end
     handles.time_axis_us = time_axis(1:under_sample:end);
     n = size(handles.sig,1) ;
     handles.WT = cell(n, 1);
@@ -384,15 +392,19 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     handles.pow_WT = cell(n,1);
     handles.pow_arr = cell(n,1);
     handles.amp_arr = cell(n,1);
-    h = waitbar(0,'Calculating Wavelet Transform...');
     %Calculating wavelet transform
     if(isnan(fmax)&& isnan(fmin))
         if(isnan(fc))
             for p = 1:n
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
-                [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+                if handles.calc_type == 1
+                    [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
-
+                else
+                    [WT,handles.freqarr]=wft(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Window',wavelet_type_selected); 
+                end
+                
                 WTamp = abs(WT);
                 WTpow = abs(WT).^2;
                 handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
@@ -404,9 +416,15 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
             end
         else
             for p = 1:n
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
-                [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+                if handles.calc_type == 1
+                    [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
+                else
+                    [WT,handles.freqarr]=wft(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Window',wavelet_type_selected,'f0',fc); 
+                end
+                
                 WTamp = abs(WT);
                 WTpow = abs(WT).^2;
                 handles.pow_arr{p,1} = nanmean(WTpow.');%Calculating Average Power
@@ -420,9 +438,14 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     elseif(isnan(fmax))
         if(isnan(fc))
             for p = 1:n
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
-                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
-                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+                status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+                if handles.calc_type == 1
+                    [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
+                else
+                    [WT,handles.freqarr]=wft(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Window',wavelet_type_selected); 
+                end
 
                 WTamp = abs(WT);
                 WTpow = abs(WT).^2;
@@ -435,9 +458,14 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
             end
         else
             for p = 1:n
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
-                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
-                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+                status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+                if handles.calc_type == 1
+                    [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
+                else
+                    [WT,handles.freqarr]=wft(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Window',wavelet_type_selected,'f0',fc); 
+                end
 
                 WTamp = abs(WT);
                 WTpow = abs(WT).^2;
@@ -452,9 +480,14 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     elseif(isnan(fmin))
         if(isnan(fc))
             for p = 1:n
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
-                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
-                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+                status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+                if handles.calc_type == 1
+                    [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
+                else
+                    [WT,handles.freqarr]=wft(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Window',wavelet_type_selected); 
+                end
 
                 WTamp = abs(WT);
                 WTpow = abs(WT).^2;
@@ -467,9 +500,14 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
             end
         else
             for p = 1:n
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
-                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
-                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+                status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+                if handles.calc_type == 1
+                    [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
+                else
+                    [WT,handles.freqarr]=wft(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Window',wavelet_type_selected,'f0',fc); 
+                end
 
                 WTamp = abs(WT);
                 WTpow = abs(WT).^2;
@@ -484,9 +522,14 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     else
         if(isnan(fc))
             for p = 1:n
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
-                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+                if handles.calc_type == 1
+                    [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
+                else
+                    [WT,handles.freqarr]=wft(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Window',wavelet_type_selected); 
+                end
 
                 WTamp = abs(WT);
                 WTpow = abs(WT).^2;
@@ -499,9 +542,15 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
             end
         else
             for p = 1:n
-                waitbar(p/n, h, sprintf('Calculating Wavelet Tranform of Signal %d',p));
-                [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                
+                status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+                if handles.calc_type == 1
+                    [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
                     'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
+                else
+                    [WT,handles.freqarr]=wft(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                    'Preprocess',preprocess_selected,'Window',wavelet_type_selected,'f0',fc); 
+                end
 
                 WTamp = abs(WT);
                 WTpow = abs(WT).^2;
@@ -514,7 +563,6 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
             end
         end
     end
-    delete(h);
     guidata(hObject,handles);
     xyplot_Callback(hObject, eventdata, handles);
     intervals_Callback(hObject, eventdata, handles)
@@ -523,7 +571,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 function xyplot_Callback(hObject, eventdata, handles)
 %Plots all figures
     signal_selected = get(handles.signal_list,'Value');  
-    if any(signal_selected == size(handles.sig,1)+1)        
+    if any(signal_selected == size(handles.sig,1)+1) && isfield(handles,'freqarr')     
         cla(handles.plot3d,'reset');
         cla(handles.plot_pow,'reset');
         cla(handles.cum_avg,'reset');
@@ -535,28 +583,35 @@ function xyplot_Callback(hObject, eventdata, handles)
         if(handles.plot_type == 1)       
             plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.pow_arr)),'--','Linewidth',3);
             plot(handles.cum_avg, handles.freqarr, median(cell2mat(handles.pow_arr)),'-','Linewidth',3);
+            ylabel(handles.cum_avg,'Average Power');
+            xlabel(handles.cum_avg,'Frequency (Hz)');
         else
             plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.amp_arr)),'--','Linewidth',3);
             plot(handles.cum_avg, handles.freqarr, median(cell2mat(handles.amp_arr)),'-','Linewidth',3);
+            ylabel(handles.cum_avg,'Average Amplitude');
+            xlabel(handles.cum_avg,'Frequency (Hz)');
         end
         legend(handles.cum_avg,'mean','median')
         for i = 1:size(signal_selected,2)            
             if(handles.plot_type == 1 && signal_selected(i) <= size(handles.sig,1))                                
-                plot(handles.cum_avg, handles.freqarr, handles.pow_arr{signal_selected(i),1});     
+                plot(handles.cum_avg, handles.freqarr, handles.pow_arr{signal_selected(i),1});                     
                 ylabel(handles.cum_avg,'Average Power');
+                xlabel(handles.cum_avg,'Frequency (Hz)');
                 [M,I] = max(handles.pow_arr{signal_selected(i),1});
                 text(handles.cum_avg,handles.freqarr(I),M,num2str(signal_selected(i)));
             elseif signal_selected(i) <= size(handles.sig,1)
-                plot(handles.cum_avg, handles.freqarr, handles.amp_arr{signal_selected(i),1});
+                plot(handles.cum_avg, handles.freqarr, handles.amp_arr{signal_selected(i),1});                
                 ylabel(handles.cum_avg,'Average Amplitude');
+                xlabel(handles.cum_avg,'Frequency (Hz)');
                 [M,I] = max(handles.amp_arr{signal_selected(i),1});
                 text(handles.cum_avg,handles.freqarr(I),M,num2str(signal_selected(i)));
             end
             
         end
+        
         set(handles.cum_avg,'xscale','log');
         xlim(handles.cum_avg,[min(handles.freqarr) max(handles.freqarr)]);
-    else
+    elseif isfield(handles,'freqarr') 
         cla(handles.cum_avg,'reset');
         cla(handles.plot3d,'reset');
         cla(handles.plot_pow,'reset');
@@ -570,7 +625,7 @@ function xyplot_Callback(hObject, eventdata, handles)
             pcolor(handles.plot3d, handles.time_axis_us , handles.freqarr, WTpow(1:end,1:end));                
             plot(handles.plot_pow, handles.pow_arr{signal_selected,1}, handles.freqarr,'-k','LineWidth',3 );     
             xlabel(handles.plot_pow,'Average Power');
-        else        
+        else 
             WTamp = handles.amp_WT{signal_selected,1};
             handles.peak_value = max(WTamp(:))+.1;
             pcolor(handles.plot3d, handles.time_axis_us , handles.freqarr, WTamp(1:end,1:end));         
@@ -594,6 +649,7 @@ function xyplot_Callback(hObject, eventdata, handles)
     end
     set(handles.plot3d,'Fontunits','normalized');
     set(handles.plot_pow,'Fontunits','normalized');
+    set(handles.cum_avg,'Fontunits','normalized');
     guidata(hObject,handles);
 % --------------------------------------------------------------------
 function file_Callback(hObject, eventdata, handles)
@@ -623,13 +679,17 @@ function csv_read_Callback(hObject, eventdata, handles)
         case 'default'
             errordlg('Data set orientation must be specified')
             return;
-    end    
-    list = 'Signal 1';
-    for i = 2:size(sig,1)
-        list = strcat(list,sprintf('\nSignal %d',i));
     end
-    list = strcat(list,sprintf('\nAverage Plot(All)'));
-    set(handles.signal_list,'String',list);    
+    
+    list = cell(size(sig,1)+1,1);
+    list{1,1} = 'Signal 1';
+    for i = 2:size(sig,1)
+        list{i,1} = sprintf('Signal %d',i);
+    end
+    set(handles.signal_list,'String',list);
+    list{i+1,1} = sprintf('Average Plot(All)');
+    set(handles.signal_list,'String',list);
+    
     handles.sig = sig;   
     time = 1:size(sig,2);
     time = time./fs;
@@ -673,12 +733,13 @@ function mat_read_Callback(hObject, eventdata, handles)
             errordlg('Data set orientation must be specified')
             return;
     end
-    list = 'Signal 1';
+    list = cell(size(sig,1)+1,1);
+    list{1,1} = 'Signal 1';
     for i = 2:size(sig,1)
-        list = strcat(list,sprintf('\nSignal %d',i));
+        list{i,1} = sprintf('Signal %d',i);
     end
     set(handles.signal_list,'String',list);
-    list = strcat(list,sprintf('\nAverage Plot(All)'));
+    list{i+1,1} = sprintf('Average Plot(All)');
     set(handles.signal_list,'String',list); 
     
     handles.sig = sig;   
@@ -767,29 +828,28 @@ function plot_type_SelectionChangeFcn(hObject, eventdata, handles)
         case 'amp'
             plot_type = 2;
     end
-    intervals = csv_to_mvar(get(handles.intervals,'String'));  
-    child_handles = allchild(handles.wt_pane);
-    for i = 1:size(child_handles,1)
-        if(strcmp(get(child_handles(i),'Type'),'axes'))
-            set(child_handles(i),'Ytick',intervals);
-            set(child_handles(i),'YTickLabel',intervals);
-            hold(child_handles(i),'on');                                          
-            for j = 1:size(intervals,2)
-                xl = get(child_handles(i),'xlim');
-                x = [xl(1) xl(2)];        
-                z = ones(1,size(x,2));
-                z = z.*zval;
-                y = intervals(j)*ones(1,size(x,2));
-                plot3(child_handles(i),x,y,z,'--k');
-            end                           
-            hold(child_handles(i),'off');
-        end          
-    end
     
     handles.plot_type = plot_type;
     guidata(hObject,handles); 
     xyplot_Callback(hObject, eventdata, handles)
     guidata(hObject,handles); 
+
+
+function calc_type_SelectionChangedFcn(hObject, eventdata, handles)
+%Deciding which type of calculation
+    switch get(eventdata.NewValue,'Tag') % Get Tag of selected object.
+        case 'wav'
+            handles.calc_type = 1;
+            list = {'Lognorm';'Morlet';'Bump'};
+            set(handles.wavelet_type,'String',list);
+        case 'four'
+            handles.calc_type = 2;
+            list = {'Hann';'Gaussian';'Blackman';'Exp';'Rect';'Kaiser-a'};
+            set(handles.wavelet_type,'String',list);    
+    end        
+    drawnow;
+    guidata(hObject,handles);
+    
 % ----------------------------------------Saving Files---------------
 function save_Callback(hObject, eventdata, handles)
 %Honestly you're just here because I don't know how to get rid of you
@@ -798,35 +858,22 @@ function save_3dplot_Callback(hObject, eventdata, handles)
 %Saves the 3d plot
 Fig = figure;
 ax = copyobj(handles.plot3d, Fig);
-Fig = tightfig(Fig);
 set(ax,'Units', 'normalized', 'Position', [0.1,0.2,.85,.7]);
 set(Fig,'Units','normalized','Position', [0.2 0.2 0.5 0.5]);
 
-function save_power_plot_Callback(hObject, eventdata, handles)
+function save_avg_plot_Callback(hObject, eventdata, handles)
 %Saves the power plot
 Fig = figure;
 ax = copyobj(handles.plot_pow, Fig);
 view(90,-90);
-Fig = tightfig(Fig);
-set(ax,'Units', 'normalized', 'Position', [0.1,0.2,.85,.7]);
+set(ax,'Units', 'normalized', 'Position', [0.1,0.2,.85,.7], 'YTickMode', 'auto', 'YTickLabelMode', 'auto');
 set(Fig,'Units','normalized','Position', [0.3 0.3 0.3 0.3]);
 
-function save_wt_mat_Callback(hObject, eventdata, handles)
-%Saves the wavelet transform in .mat format
-[FileName,PathName] = uiputfile('.mat','Save Wavelet Transform as');
-save_location = strcat(PathName,FileName)
-WavTr.WT = handles.WT;
-WavTr.freqarr = handles.freqarr;
-save(save_location,'WavTr','-v7.3');
-
-function save_wt_csv_Callback(hObject, eventdata, handles)
-%Saves the wavelet transform in .csv format
-[FileName,PathName] = uiputfile('.csv');
-save_location = strcat(PathName,FileName)
-csvwrite(save_location,handles.freqarr);
-[FileName,PathName] = uiputfile
-save_location = strcat(PathName,FileName);
-csvwrite(save_location,handles.WT);
+function save_mm_plot_Callback(hObject, eventdata, handles)
+Fig = figure;
+ax = copyobj(handles.cum_avg, Fig);
+set(ax,'Units', 'normalized', 'Position', [0.1,0.2,.85,.7]);
+set(Fig,'Units','normalized','Position', [0.2 0.2 0.5 0.5]);
 
 function save_pow_arr_csv_Callback(hObject, eventdata, handles)
 %Saves the avg power array in .csv format
@@ -892,9 +939,9 @@ fs = str2double(get(handles.sampling_freq,'String'));
 xl = get(handles.xlim,'String');
 xl = csv_to_mvar(xl);
 xl = xl.*fs;
-xl(2) = min(xl(2),size(handles.sig,1));
-xl(1) = max(xl(1),1);
-sig = sig(xl(1):xl(2),1);
+xl(2) = floor(min(xl(2),size(handles.sig,2)));
+xl(1) = floor(max(xl(1),1));
+sig = sig(:,xl(1):xl(2));
 csvwrite(save_location,sig);
 
 function save_cut_ts_mat_Callback(hObject, eventdata, handles)
@@ -905,7 +952,7 @@ fs = str2double(get(handles.sampling_freq,'String'));
 xl = get(handles.xlim,'String');
 xl = csv_to_mvar(xl);
 xl = xl.*fs;
-xl(2) = min(xl(2),size(handles.sig,1));
+xl(2) = min(xl(2),size(handles.sig,2));
 xl(1) = max(xl(1),1);
-sig = sig(xl(1):xl(2),1);
+sig = sig(:,xl(1):xl(2));
 save(save_location,'sig');
