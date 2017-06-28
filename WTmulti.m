@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 28-Jun-2017 19:32:46
+% Last Modified by GUIDE v2.5 28-Jun-2017 22:05:04
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -245,48 +245,57 @@ function intervals_Callback(hObject, eventdata, handles)
 
 function preprocess_Callback(hObject, eventdata, handles)
 %Detrending Part Visualisation
-    cla(handles.plot_pp,'reset');
-    signal_selected = get(handles.signal_list,'Value');
-    sig = handles.sig(signal_selected,:); 
-    time_axis = handles.time_axis;
-    L = length(sig);
+    cla(handles.plot_pp,'reset'); 
+    L = size(handles.sig,2);
+    signal_selected = get(handles.signal_list, 'Value');
     fs = str2double(get(handles.sampling_freq,'String'));
     fmax = str2double(get(handles.max_freq,'String'));
     fmin = str2double(get(handles.min_freq,'String'));
-    
-    %Detrending
-    X=(1:length(sig))'/fs; XM=ones(length(X),4); 
+    if ~isfield(handles,'sig_pp')
+        handles.sig_pp = cell(size(handles.sig,1),1);
+        for i = 1:size(handles.sig,1)        
+            sig = handles.sig(i,:);             
+            %Detrending
+            X=(1:length(sig))'/fs; XM=ones(length(X),4); 
 
-    for pn=1:3 
-        CX=X.^pn; 
-        XM(:,pn+1)=(CX-mean(CX))/std(CX); 
+            for pn=1:3 
+                CX=X.^pn; 
+                XM(:,pn+1)=(CX-mean(CX))/std(CX); 
+            end
+            sig = sig(:);
+            w=warning('off','all'); 
+            new_signal=sig-XM*(pinv(XM)*sig); 
+            warning(w);
+
+            %Filtering
+            fx=fft(new_signal,L); % Fourier transform of a signal
+
+            Nq=ceil((L+1)/2); 
+            ff=[(0:Nq-1),-fliplr(1:L-Nq)]*fs/L; 
+            ff=ff(:); % frequencies in Fourier transform
+
+            fx(abs(ff)<=max([fmin,fs/L]) | abs(ff)>=fmax)=0; % filter signal in a chosen frequency domain
+            handles.sig_pp{i,1} = ifft(fx)';
+
+        end   
     end
-    sig = sig(:);
-    w=warning('off','all'); 
-    new_signal=sig-XM*(pinv(XM)*sig); 
-    warning(w);
-
-    %Filtering
-    fx=fft(new_signal,L); % Fourier transform of a signal
-    
-    Nq=ceil((L+1)/2); 
-    ff=[(0:Nq-1),-fliplr(1:L-Nq)]*fs/L; 
-    ff=ff(:); % frequencies in Fourier transform
-    
-    fx(abs(ff)<=max([fmin,fs/L]) | abs(ff)>=fmax)=0; % filter signal in a chosen frequency domain
-    new_signal=ifft(fx);
-    
-    handles.sig_pp = new_signal;
-    
     %Plotting
-    plot(handles.plot_pp,time_axis,sig);
+    
+    plot(handles.plot_pp,handles.time_axis,handles.sig(signal_selected,:));
     hold(handles.plot_pp,'on');
-    plot(handles.plot_pp,time_axis,new_signal,'-r');
-    %legend(handles.plot_pp,'Original','Pre-Processed','Location','Best');
-    xlim(handles.plot_pp,[0,size(sig,1)./fs]);
+    plot(handles.plot_pp,handles.time_axis, handles.sig_pp{signal_selected,1},'-r');
+    legend(handles.plot_pp,{'Original','Pre-Processed'},'FontSize',8,'Location','Best','units','normalized');
+    xlim(handles.plot_pp,[0,size(handles.sig,2)./fs]);
     set(handles.plot_pp,'Fontunits','normalized');
-    xlabel(handles.plot_pp,{'Time (s)'},'FontUnits','normalized');    
+    xlabel(handles.plot_pp,{'Time (s)'},'FontUnits','normalized');   
+    xl = csv_to_mvar(get(handles.xlim,'String'));
+    xl = xl.*fs;
+    xl(2) = min(xl(2),size(handles.sig,2));
+    xl(1) = max(xl(1),1);
+    xl = xl./fs;
+    set(handles.plot_pp,'xlim',[xl(1) xl(2)]);%making the axes tight
     guidata(hObject,handles);
+    drawnow;
 
 function signal_list_Callback(hObject, eventdata, handles)
 %Selecting signal and calling other necessary functions
@@ -673,9 +682,9 @@ function csv_read_Callback(hObject, eventdata, handles)
     switch choice
         case 'Column wise'
             sig = sig';
-            msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
+            %msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
         case 'Row wise'
-            msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
+            %msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
         case 'default'
             errordlg('Data set orientation must be specified')
             return;
@@ -694,17 +703,18 @@ function csv_read_Callback(hObject, eventdata, handles)
     time = 1:size(sig,2);
     time = time./fs;
     handles.time_axis = time;
-    guidata(hObject,handles);    
+    
     plot(handles.time_series,time,sig(1,:));%Plotting the time_series part afte calculation of appropriate limits
     xlim(handles.time_series,[0,size(sig,2)./fs]);
     xlabel(handles.time_series,'Time (s)');    
+    guidata(hObject,handles);    
     refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box    
     cla(handles.plot_pp,'reset');
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series,'Time (s)');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
     set(handles.signal_length,'String',strcat(size(sig,2)/fs/60,' minutes'));
-
+    
 
 % --------------------------------------------------------------------
 function mat_read_Callback(hObject, eventdata, handles)
@@ -726,9 +736,9 @@ function mat_read_Callback(hObject, eventdata, handles)
     switch choice
         case 'Column wise'
             sig = sig';
-            msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
+            %msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
         case 'Row wise'
-            msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
+            %msgbox(sprintf('Number of data sets %d',size(sig,1)),'Import Complete');
         case 'default'
             errordlg('Data set orientation must be specified')
             return;
@@ -752,13 +762,13 @@ function mat_read_Callback(hObject, eventdata, handles)
     xlabel(handles.time_series,'Time (s)');
     
     refresh_limits_Callback(hObject, eventdata, handles);%updates the values in the box
-    
+    guidata(hObject,handles);  
     cla(handles.plot_pp,'reset');
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series,'Time (s)');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
     set(handles.signal_length,'String',strcat(num2str(size(sig,2)/fs/60),' minutes'));
-    guidata(hObject,handles);    
+      
     
 
 %---------------------------Limits-----------------------------
@@ -879,27 +889,32 @@ function save_pow_arr_csv_Callback(hObject, eventdata, handles)
 %Saves the avg power array in .csv format
 [FileName,PathName] = uiputfile('.csv');
 save_location = strcat(PathName,FileName);
-save_location = strcat(save_location);
-csvwrite(save_location,handles.pow_arr);
+pow_arr = cell2mat(handles.pow_arr);
+csvwrite(save_location,pow_arr);
 
 function save_amp_arr_csv_Callback(hObject, eventdata, handles)
 [FileName,PathName] = uiputfile('.csv');
 save_location = strcat(PathName,FileName);
-save_location = strcat(save_location);
-csvwrite(save_location,handles.amp_arr);
+amp_arr = cell2mat(handles.amp_arr);
+csvwrite(save_location,amp_arr);
+
+function save_freqarr_csv_Callback(hObject, eventdata, handles)
+[FileName,PathName] = uiputfile('.csv');
+save_location = strcat(PathName,FileName);
+csvwrite(save_location,handles.freqarr');
 
 function save_sig_pp_csv_Callback(hObject, eventdata, handles)
 %Saves the preprocessed signal in .csv format
 [FileName,PathName] = uiputfile('.csv');
 save_location = strcat(PathName,FileName)
-sig_pp = handles.sig_pp;
+sig_pp = cell2mat(handles.sig_pp);
 fs = str2double(get(handles.sampling_freq,'String'));
 xl = get(handles.xlim,'String');
 xl = csv_to_mvar(xl);
 xl = xl.*fs;
-xl(2) = min(xl(2),size(handles.sig,1));
+xl(2) = min(xl(2),size(handles.sig,2));
 xl(1) = max(xl(1),1);
-sig_pp = sig_pp(xl(1):xl(2),1);
+sig_pp = sig_pp(:,xl(1):xl(2));
 csvwrite(save_location,sig_pp);
 
 function save_pow_arr_mat_Callback(hObject, eventdata, handles)
@@ -907,14 +922,14 @@ function save_pow_arr_mat_Callback(hObject, eventdata, handles)
 [FileName,PathName] = uiputfile('.mat','Save Power Array as');
 save_location = strcat(PathName,FileName)
 powStruct.pow_arr = handles.pow_arr;
-powStruct.freqarr = handles.freqarr;
+powStruct.freqarr = handles.freqarr';
 save(save_location,'powStruct');
 
 function save_amp_arr_mat_Callback(hObject, eventdata, handles)
 [FileName,PathName] = uiputfile('.mat','Save Amplitude Array as');
 save_location = strcat(PathName,FileName)
 ampStruct.amp_arr = handles.amp_arr;
-ampStruct.freqarr = handles.freqarr;
+ampStruct.freqarr = handles.freqarr';
 save(save_location,'ampStruct');
 
 function save_sig_pp_mat_Callback(hObject, eventdata, handles)
