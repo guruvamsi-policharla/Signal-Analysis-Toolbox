@@ -349,7 +349,6 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
       errordlg('Sampling frequency must be specified','Parameter Error');
     end
     
-    
     items = get(handles.wavelet_type,'String');
     index_selected = get(handles.wavelet_type,'Value');
     wavelet_type_selected = items{index_selected};
@@ -366,7 +365,6 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
       errordlg('Signal not found','Signal Error');
     end
     sig = handles.sig;    % do not optimise as the signal is being cut in this case
-    
     
     xl = csv_to_mvar(get(handles.xlim,'String'));
     xl = xl.*fs;
@@ -618,7 +616,10 @@ function xyplot_Callback(hObject, eventdata, handles)
             
         end
         
-        set(handles.cum_avg,'xscale','log');
+        if handles.calc_type == 1
+            set(handles.cum_avg,'xscale','log');
+        end
+        
         xlim(handles.cum_avg,[min(handles.freqarr) max(handles.freqarr)]);
     elseif isfield(handles,'freqarr') 
         cla(handles.cum_avg,'reset');
@@ -645,8 +646,12 @@ function xyplot_Callback(hObject, eventdata, handles)
         set(c, 'position',[0.71 .12 .015 .85],'Linewidth',0.2);
         set(c, 'fontsize',8,'units','normalized');
         shading(handles.plot3d,'interp');
-        set(handles.plot3d,'yscale','log');
-        set(handles.plot_pow,'yscale','log');
+        
+        if handles.calc_type == 1
+            set(handles.plot3d,'yscale','log');
+            set(handles.plot_pow,'yscale','log');
+        end
+        
         set(handles.plot_pow,'yticklabel',[]);
         set(handles.plot3d,'ylim',[min(handles.freqarr) max(handles.freqarr)]);%making the axes tight
         set(handles.plot3d,'xlim',[handles.time_axis_us(1) handles.time_axis_us(end)]);%making the axes tight
