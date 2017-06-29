@@ -251,7 +251,7 @@ function preprocess_Callback(hObject, eventdata, handles)
     fs = str2double(get(handles.sampling_freq,'String'));
     fmax = str2double(get(handles.max_freq,'String'));
     fmin = str2double(get(handles.min_freq,'String'));
-    if ~isfield(handles,'sig_pp')
+    %if ~isfield(handles,'sig_pp')
         handles.sig_pp = cell(size(handles.sig,1),1);
         for i = 1:size(handles.sig,1)        
             sig = handles.sig(i,:);             
@@ -278,7 +278,7 @@ function preprocess_Callback(hObject, eventdata, handles)
             handles.sig_pp{i,1} = ifft(fx)';
 
         end   
-    end
+    %end
     %Plotting
     
     plot(handles.plot_pp,handles.time_axis,handles.sig(signal_selected,:));
@@ -718,7 +718,7 @@ function csv_read_Callback(hObject, eventdata, handles)
     preprocess_Callback(hObject, eventdata, handles);%plots the detrended curve
     xlabel(handles.time_series,'Time (s)');
     set(handles.status,'String','Select Data And Continue With Wavelet Transform');
-    set(handles.signal_length,'String',strcat(size(sig,2)/fs/60,' minutes'));
+     set(handles.signal_length,'String',strcat(num2str(size(sig,2)/fs/60),' minutes'));
     
 
 % --------------------------------------------------------------------
