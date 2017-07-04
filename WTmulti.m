@@ -388,8 +388,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     xl = xl.*fs;
     xl(2) = min(xl(2),size(handles.sig,2));
     xl(1) = max(xl(1),1);
-    sig = sig(:,xl(1):xl(2));
-    
+    handles.sig_cut = sig(:,xl(1):xl(2));
     set(handles.status,'String','Calculating Wavelet Transform...');
     
     handles.amp_WT = cell(n,1);
@@ -402,72 +401,72 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
         if(isnan(fmax)&& isnan(fmin))
             if(isnan(fc))
                     if handles.calc_type == 1
-                        [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wt(handles.sig_cut(p,:),fs,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
                     else
-                        [WT,handles.freqarr]=wft(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wft(handles.sig_cut(p,:),fs,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Window',wavelet_type_selected); 
                     end            
             else
                     if handles.calc_type == 1
-                        [WT,handles.freqarr]=wt(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wt(handles.sig_cut(p,:),fs,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
                     else
-                        [WT,handles.freqarr]=wft(sig(p,:),fs,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wft(handles.sig_cut(p,:),fs,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Window',wavelet_type_selected,'f0',fc); 
                     end   
             end
         elseif(isnan(fmax))
             if(isnan(fc))
                     if handles.calc_type == 1
-                        [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wt(handles.sig_cut(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
                     else
-                        [WT,handles.freqarr]=wft(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wft(handles.sig_cut(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Window',wavelet_type_selected); 
                     end
             else
                     if handles.calc_type == 1
-                        [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wt(handles.sig_cut(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
                     else
-                        [WT,handles.freqarr]=wft(sig(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wft(handles.sig_cut(p,:),fs,'fmin',fmin,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Window',wavelet_type_selected,'f0',fc); 
                     end
             end
         elseif(isnan(fmin))
             if(isnan(fc))
                     if handles.calc_type == 1
-                        [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wt(handles.sig_cut(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected); 
                     else
-                        [WT,handles.freqarr]=wft(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wft(handles.sig_cut(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Window',wavelet_type_selected); 
                     end
             else
                     if handles.calc_type == 1
-                        [WT,handles.freqarr]=wt(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wt(handles.sig_cut(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc); 
                     else
-                        [WT,handles.freqarr]=wft(sig(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wft(handles.sig_cut(p,:),fs,'fmax',fmax,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Window',wavelet_type_selected,'f0',fc); 
                     end
             end
         else
             if(isnan(fc))
                     if handles.calc_type == 1
-                        [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wt(handles.sig_cut(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected);
                     else
-                        [WT,handles.freqarr]=wft(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wft(handles.sig_cut(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Window',wavelet_type_selected); 
                     end
             else
                     if handles.calc_type == 1
-                        [WT,handles.freqarr]=wt(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wt(handles.sig_cut(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Wavelet',wavelet_type_selected,'f0',fc);
                     else
-                        [WT,handles.freqarr]=wft(sig(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
+                        [WT,handles.freqarr]=wft(handles.sig_cut(p,:),fs,'fmin',fmin,'fmax',fmax,'CutEdges',cutedges_selected,...
                         'Preprocess',preprocess_selected,'Window',wavelet_type_selected,'f0',fc); 
                     end                 
             end
@@ -488,7 +487,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
 function xyplot_Callback(hObject, eventdata, handles)
 %Plots all figures
     signal_selected = get(handles.signal_list,'Value');  
-    if any(signal_selected == size(handles.sig,1)+1) && isfield(handles,'freqarr')     
+    if any(signal_selected == size(handles.sig,1)+1) && isfield(handles,'freqarr')                  
         cla(handles.plot3d,'reset');
         cla(handles.plot_pow,'reset');
         cla(handles.cum_avg,'reset');
@@ -496,6 +495,7 @@ function xyplot_Callback(hObject, eventdata, handles)
         set(handles.plot_pow,'visible','off');   
         set(handles.cum_avg,'visible','on');
         hold(handles.cum_avg,'on');
+        uistack(handles.cum_avg,'top');
         size(handles.sig,1)
         if(handles.plot_type == 1)       
             plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.pow_arr)),'--','Linewidth',3);
@@ -538,6 +538,8 @@ function xyplot_Callback(hObject, eventdata, handles)
         set(handles.cum_avg,'visible','off');
         set(handles.plot3d,'visible','on');
         set(handles.plot_pow,'visible','on');
+        uistack(handles.plot3d,'top');
+        uistack(handles.plot_pow,'top');
         
         if(handles.plot_type == 1)      
             WTpow = handles.pow_WT{signal_selected,1};
