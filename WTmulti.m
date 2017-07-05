@@ -613,7 +613,7 @@ function csv_read_Callback(hObject, eventdata, handles)
         list{i,1} = sprintf('Signal %d',i);
     end
     set(handles.signal_list,'String',list);
-    list{i+1,1} = sprintf('Average Plot(All)');
+    list{size(sig,1)+1,1} = sprintf('Average Plot(All)');
     set(handles.signal_list,'String',list);
     
     handles.sig = sig;   
