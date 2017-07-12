@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 28-Jun-2017 22:05:04
+% Last Modified by GUIDE v2.5 12-Jul-2017 19:05:41
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -76,6 +76,7 @@ axis image
 h = findall(0,'Type','uicontrol');
 set(h,'FontUnits','normalized');
 handles.calc_type = 1;
+handles.plot_type = 2;
 drawnow;
 handles.output = hObject;
 guidata(hObject, handles);
@@ -186,6 +187,7 @@ end
 function signal_length_Callback(hObject, eventdata, handles)
 function plot_type_ButtonDownFcn(hObject, eventdata, handles)
 function calc_type_CreateFcn(hObject, eventdata, handles)
+function save_figure_Callback(hObject, eventdata, handles)
 %--------------------------------------------------Unused Callbacks--------
 function status_Callback(hObject, eventdata, handles, msg)
 set(handles.status,'String',msg);
@@ -202,43 +204,100 @@ function sampling_rate_Callback(hObject, eventdata, handles)
 %Replots after changin sampling rate
     xyplot_Callback(hObject, eventdata, handles);
 
+% function intervals_Callback(hObject, eventdata, handles)
+% %Marking lines on the graphs    
+%     intervals = csv_to_mvar(get(handles.intervals,'String'));    
+%     clear_axes_lines(handles.plot3d);
+%     set(handles.plot3d,'YTickLabel',[]);
+%     set(handles.plot_pow,'YTickLabel',[]);
+%     grid(handles.plot_pow,'on');
+%     grid(handles.plot3d,'on');
+%     set(handles.plot3d, 'YTickMode', 'auto', 'YTickLabelMode', 'auto')
+%     if(size(intervals)>0)
+%         zval = 1;
+%         child_handles = allchild(handles.wt_pane);
+%         for i = 1:size(child_handles,1)
+%             
+%             if(strcmp(get(child_handles(i),'Type'),'axes'))
+%                 set(child_handles(i),'Ytick',intervals);
+%                 set(child_handles(i),'YTickLabel',intervals);
+%                 hold(child_handles(i),'on');                                          
+%                 for j = 1:size(intervals,2)
+%                     xl = get(child_handles(i),'xlim');
+%                     x = [xl(1) xl(2)];        
+%                     z = ones(1,size(x,2));
+%                     z = z.*zval;
+%                     y = intervals(j)*ones(1,size(x,2));
+%                     plot3(child_handles(i),x,y,z,'--k');
+%                 end                           
+%                 hold(child_handles(i),'off');
+%             end          
+%         end
+%     else
+%         child_handles = allchild(handles.plot_pow);
+%         for i = 1:size(child_handles,1)-1    
+%             if(strcmp(get(child_handles(i),'Type'),'line'))                                
+%                     delete(child_handles(i));                
+%             end
+%         end       
+%     end
 function intervals_Callback(hObject, eventdata, handles)
 %Marking lines on the graphs    
-    intervals = csv_to_mvar(get(handles.intervals,'String'));    
-    clear_axes_lines(handles.plot3d);
-    set(handles.plot3d,'YTickLabel',[]);
-    set(handles.plot_pow,'YTickLabel',[]);
-    grid(handles.plot_pow,'on');
-    grid(handles.plot3d,'on');
-    set(handles.plot3d, 'YTickMode', 'auto', 'YTickLabelMode', 'auto')
-    if(size(intervals)>0)
-        zval = 1;
-        child_handles = allchild(handles.wt_pane);
-        for i = 1:size(child_handles,1)
-            
-            if(strcmp(get(child_handles(i),'Type'),'axes'))
-                set(child_handles(i),'Ytick',intervals);
-                set(child_handles(i),'YTickLabel',intervals);
-                hold(child_handles(i),'on');                                          
-                for j = 1:size(intervals,2)
-                    xl = get(child_handles(i),'xlim');
-                    x = [xl(1) xl(2)];        
-                    z = ones(1,size(x,2));
-                    z = z.*zval;
-                    y = intervals(j)*ones(1,size(x,2));
-                    plot3(child_handles(i),x,y,z,'--k');
-                end                           
-                hold(child_handles(i),'off');
-            end          
-        end
-    else
-        child_handles = allchild(handles.plot_pow);
-        for i = 1:size(child_handles,1)-1    
-            if(strcmp(get(child_handles(i),'Type'),'line'))                                
-                    delete(child_handles(i));                
+    intervals = csv_to_mvar(get(handles.intervals,'String'));      
+    %Clearing unmarked lines
+    child_handles = allchild(handles.wt_pane);            
+    for i = 1:size(child_handles,1)        
+        if(strcmp(get(child_handles(i),'Type'),'axes'))
+            axes_child = allchild(child_handles(i));
+            for j = 1:size(axes_child,1)
+                if strcmpi(get(axes_child(j),'Type'),'Line') 
+                    line_style = get(axes_child(j),'linestyle');
+                    line_width = get(axes_child(j),'linewidth');
+                    if strcmp(line_style,'--') && line_width <= 1
+                        delete(axes_child(j)); 
+                    end
+                end
             end
-        end       
+            set(child_handles(i),'Ytickmode','auto','Xtickmode','auto');            
+        end
     end
+    interval_selected = get(handles.signal_list,'Value');
+    hold(handles.cum_avg,'on');
+    if interval_selected == size(handles.sig,1) + 1
+        for j = 1:size(intervals,2)
+            xl = get(child_handles(i),'ylim');
+            x = [xl(1) xl(2)];        
+            z = ones(1,size(x,2));
+            y = intervals(j)*ones(1,size(x,2));
+            plot3(handles.cum_avg,y,x,z,'--k');
+            set(handles.cum_avg,'Xtick',intervals);
+        end        
+    else    
+        if(size(intervals)>0)
+            zval = 1;        
+            for i = 1:size(child_handles,1)            
+                if(strcmp(get(child_handles(i),'Type'),'axes') && strcmp(get(child_handles(i),'Visible'),'on'))
+                    
+                    hold(child_handles(i),'on');
+                    warning('off');
+
+                    for j = 1:size(intervals,2)
+                        xl = get(child_handles(i),'xlim');
+                        x = [xl(1) xl(2)];        
+                        z = ones(1,size(x,2));
+                        z = z.*zval;
+                        y = intervals(j)*ones(1,size(x,2));
+                        plot3(child_handles(i),x,y,z,'--k');
+                    end
+                    set(child_handles(i),'Ytick',intervals);
+                    warning('on');
+                    hold(child_handles(i),'off');
+                end            
+            end    
+        end
+    end
+    
+    set(handles.plot_pow,'Yticklabel',[]);
 
 function preprocess_Callback(hObject, eventdata, handles)
 %Detrending Part Visualisation
@@ -422,20 +481,32 @@ function xyplot_Callback(hObject, eventdata, handles)
         set(handles.plot3d,'visible','off');
         set(handles.plot_pow,'visible','off');   
         set(handles.cum_avg,'visible','on');
+        
         hold(handles.cum_avg,'on');
         uistack(handles.cum_avg,'top');
         size(handles.sig,1)
-        if(handles.plot_type == 1)       
-            plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.pow_arr)),'--','Linewidth',3);
-            plot(handles.cum_avg, handles.freqarr, median(cell2mat(handles.pow_arr)),'-','Linewidth',3);
+        if(handles.plot_type == 1)    
+            if size(handles.sig,1) == 1                                
+                plot(handles.cum_avg, handles.freqarr,cell2mat(handles.pow_arr),'-','Linewidth',3);
+                plot(handles.cum_avg, handles.freqarr,cell2mat(handles.pow_arr),'--','Linewidth',3);
+            else
+                plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.pow_arr)),'-','Linewidth',3);
+                plot(handles.cum_avg, handles.freqarr, median(cell2mat(handles.pow_arr)),'--','Linewidth',3);
+            end
             ylabel(handles.cum_avg,'Average Power');
             xlabel(handles.cum_avg,'Frequency (Hz)');
         else
-            plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.amp_arr)),'--','Linewidth',3);
-            plot(handles.cum_avg, handles.freqarr, median(cell2mat(handles.amp_arr)),'-','Linewidth',3);
+            if size(handles.sig,1) == 1
+                plot(handles.cum_avg, handles.freqarr, cell2mat(handles.amp_arr),'-','Linewidth',3);
+                plot(handles.cum_avg, handles.freqarr, cell2mat(handles.amp_arr),'--','Linewidth',3);
+            else
+                plot(handles.cum_avg, handles.freqarr, mean(cell2mat(handles.amp_arr)),'-','Linewidth',3);
+                plot(handles.cum_avg, handles.freqarr, median(cell2mat(handles.amp_arr)),'--','Linewidth',3);
+            end
             ylabel(handles.cum_avg,'Average Amplitude');
             xlabel(handles.cum_avg,'Frequency (Hz)');
         end
+        
         legend(handles.cum_avg,'mean','median')
         for i = 1:size(signal_selected,2)            
             if(handles.plot_type == 1 && signal_selected(i) <= size(handles.sig,1))                                
@@ -453,9 +524,11 @@ function xyplot_Callback(hObject, eventdata, handles)
             end
             
         end
-        
+        grid(handles.cum_avg,'on');
         if handles.calc_type == 1
             set(handles.cum_avg,'xscale','log');
+        else
+            set(handles.cum_avg,'xscale','linear');
         end
         
         xlim(handles.cum_avg,[min(handles.freqarr) max(handles.freqarr)]);
@@ -501,6 +574,9 @@ function xyplot_Callback(hObject, eventdata, handles)
         ylim(handles.plot_pow,[min(handles.freqarr) max(handles.freqarr)]);
         set(handles.status,'String','Done Plotting');
     end
+    grid(handles.plot3d,'on');
+    grid(handles.plot_pow,'on');
+    grid(handles.cum_avg,'on');
     set(handles.plot3d,'Fontunits','normalized');
     set(handles.plot_pow,'Fontunits','normalized');
     set(handles.cum_avg,'Fontunits','normalized');
@@ -679,12 +755,11 @@ function plot_type_SelectionChangeFcn(hObject, eventdata, handles)
 %deciding which plot
     switch get(eventdata.NewValue,'Tag') % Get Tag of selected object.
         case 'power'
-            plot_type = 1;
+            handles.plot_type = 1;
         case 'amp'
-            plot_type = 2;
+            handles.plot_type = 2;
     end
     
-    handles.plot_type = plot_type;
     guidata(hObject,handles); 
     xyplot_Callback(hObject, eventdata, handles)
     guidata(hObject,handles); 
@@ -816,3 +891,5 @@ xl(2) = min(xl(2),size(handles.sig,2));
 xl(1) = max(xl(1),1);
 sig = sig(:,xl(1):xl(2));
 save(save_location,'sig');
+
+
