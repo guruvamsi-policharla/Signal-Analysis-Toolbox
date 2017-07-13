@@ -265,14 +265,17 @@ function intervals_Callback(hObject, eventdata, handles)
     interval_selected = get(handles.signal_list,'Value');
     hold(handles.cum_avg,'on');
     if interval_selected == size(handles.sig,1) + 1
-        for j = 1:size(intervals,2)
-            xl = get(child_handles(i),'ylim');
+        xl = get(child_handles(i),'ylim');
+        for j = 1:size(intervals,2)            
             x = [xl(1) xl(2)];        
             z = ones(1,size(x,2));
             y = intervals(j)*ones(1,size(x,2));
             plot3(handles.cum_avg,y,x,z,'--k');
-            set(handles.cum_avg,'Xtick',intervals);
+            xticks = get(child_handles(i),'xtick');
+            xticks = unique(sort([xticks intervals]));
+            set(handles.cum_avg,'xtick',xticks);            
         end        
+        set(child_handles(i),'ylim',xl);
     else    
         if(size(intervals)>0)
             zval = 1;        
@@ -281,19 +284,22 @@ function intervals_Callback(hObject, eventdata, handles)
                     
                     hold(child_handles(i),'on');
                     warning('off');
-
+                    xl = get(child_handles(i),'xlim');
                     for j = 1:size(intervals,2)
-                        xl = get(child_handles(i),'xlim');
+                        
                         x = [xl(1) xl(2)];        
                         z = ones(1,size(x,2));
                         z = z.*zval;
                         y = intervals(j)*ones(1,size(x,2));
                         plot3(child_handles(i),x,y,z,'--k');
                     end
-                    set(child_handles(i),'Ytick',intervals);
+                    yticks = get(child_handles(i),'ytick');
+                    yticks = unique(sort([yticks intervals]));
+                    set(child_handles(i),'Ytick',yticks);
                     warning('on');
                     hold(child_handles(i),'off');
                 end            
+                set(child_handles(i),'xlim',xl);
             end    
         end
     end
