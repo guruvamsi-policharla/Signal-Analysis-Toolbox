@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 13-Jul-2017 17:08:50
+% Last Modified by GUIDE v2.5 13-Jul-2017 17:32:29
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -905,5 +905,3 @@ xl(2) = min(xl(2),size(handles.sig,2));
 xl(1) = max(xl(1),1);
 sig = sig(:,xl(1):xl(2));
 save(save_location,'sig');
-
-
