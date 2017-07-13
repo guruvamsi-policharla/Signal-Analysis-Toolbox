@@ -4,7 +4,4 @@ function M = read_from_mat
 [filename,pathname,filterindex] = uigetfile('*.mat'); %only allows csv format files to be read
 
 name = fullfile(pathname,filename)
-if strmcp(name,'\')
-    return;
-end
 M = load(name);
