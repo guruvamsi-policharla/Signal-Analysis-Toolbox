@@ -271,7 +271,7 @@ function intervals_Callback(hObject, eventdata, handles)
             z = ones(1,size(x,2));
             y = intervals(j)*ones(1,size(x,2));
             plot3(handles.cum_avg,y,x,z,'--k');
-            xticks = get(child_handles(i),'xtick');
+            xticks = get(handles.cum_avg,'xtick');
             xticks = unique(sort([xticks intervals]));
             set(handles.cum_avg,'xtick',xticks);            
         end        
