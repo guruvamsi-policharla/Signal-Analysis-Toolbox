@@ -514,13 +514,13 @@ function xyplot_Callback(hObject, eventdata, handles)
                 ylabel(handles.cum_avg,'Average Power');
                 xlabel(handles.cum_avg,'Frequency (Hz)');
                 [M,I] = max(handles.pow_arr{signal_selected(i),1});
-                text(handles.cum_avg,handles.freqarr(I),M,num2str(signal_selected(i)));
+%                 text(handles.cum_avg,handles.freqarr(I),M,num2str(signal_selected(i)));
             elseif signal_selected(i) <= size(handles.sig,1)
                 plot(handles.cum_avg, handles.freqarr, handles.amp_arr{signal_selected(i),1});                
                 ylabel(handles.cum_avg,'Average Amplitude');
                 xlabel(handles.cum_avg,'Frequency (Hz)');
                 [M,I] = max(handles.amp_arr{signal_selected(i),1});
-                text(handles.cum_avg,handles.freqarr(I),M,num2str(signal_selected(i)));
+%                 text(handles.cum_avg,handles.freqarr(I),M,num2str(signal_selected(i)));
             end
             
         end
