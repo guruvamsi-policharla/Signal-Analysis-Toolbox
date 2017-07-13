@@ -876,14 +876,14 @@ function save_sig_pp_mat_Callback(hObject, eventdata, handles)
 %Saves the preprocessed signal in .mat format
 [FileName,PathName] = uiputfile('.mat','Save Preprocessed Signal as');
 save_location = strcat(PathName,FileName)
-sig_pp = handles.sig_pp;
+sig_pp = cell2mat(handles.sig_pp);
 fs = str2double(get(handles.sampling_freq,'String'));
 xl = get(handles.xlim,'String');
 xl = csv_to_mvar(xl);
 xl = xl.*fs;
-xl(2) = min(xl(2),size(handles.sig,1));
+xl(2) = min(xl(2),size(handles.sig,2));
 xl(1) = max(xl(1),1);
-sig_pp = sig_pp(xl(1):xl(2),1);
+sig_pp = sig_pp(:,xl(1):xl(2));
 save(save_location,'sig_pp');
  
 function save_cut_ts_csv_Callback(hObject, eventdata, handles)
