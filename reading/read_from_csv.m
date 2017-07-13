@@ -3,5 +3,9 @@ function M = read_from_csv
 
 [filename,pathname,filterindex] = uigetfile('*.csv'); %only allows csv format files to be read
 
+
 name = fullfile(pathname,filename)
+if strmcp(name,'\')
+    return;
+end
 M = csvread(name);

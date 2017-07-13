@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 13-Jul-2017 17:32:29
+% Last Modified by GUIDE v2.5 13-Jul-2017 18:17:16
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -876,3 +876,22 @@ xl(2) = min(xl(2),size(handles.sig,2));
 xl(1) = max(xl(1),1);
 sig = sig(:,xl(1):xl(2));
 save(save_location,'sig');
+
+function save_time_axis_mat_Callback(hObject, eventdata, handles)
+[FileName,PathName] = uiputfile('.mat','Save Cut Signal as');
+save_location = strcat(PathName,FileName)
+time_axis = get(handles.plot3d,'xlim');
+fs = str2double(get(handles.sampling_freq,'String'));
+time_axis = time_axis(1):1/fs:time_axis(2);
+time_axis = time_axis(2:end);
+save(save_location,'time_axis');
+
+function save_time_axis_csv_Callback(hObject, eventdata, handles)
+[FileName,PathName] = uiputfile('.mat','Save Cut Signal as');
+save_location = strcat(PathName,FileName)
+time_axis = get(handles.plot3d,'xlim');
+fs = str2double(get(handles.sampling_freq,'String'));
+time_axis = time_axis(1):1/fs:time_axis(2);
+time_axis = time_axis(2:end);
+csvwrite(save_location,time_axis);
+
