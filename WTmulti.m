@@ -8,7 +8,7 @@
 %----------------------------Documentation--------------------------------
 %Reads a 1-D signal in either .mat or .csv format and displays it. 
 %User can select the part of the signal he wants to use, and calculate wavelet
-%tranform of that part. 
+%transform of that part. 
 %Plots the Amplitude/Power surf plot and the average power plot over time. 
 %Also contains save options for the graphs and data from wavelet transform.
 
@@ -39,7 +39,7 @@ function varargout = WTmulti(varargin)
 
 % Edit the above text to modify the response to help WTmulti
 
-% Last Modified by GUIDE v2.5 12-Jul-2017 19:05:41
+% Last Modified by GUIDE v2.5 13-Jul-2017 17:08:50
 %*************************************************************************%
 %                BEGIN initialization code - DO NOT EDIT                  %
 %                ----------------------------------------                 %
@@ -244,6 +244,7 @@ function sampling_rate_Callback(hObject, eventdata, handles)
 function intervals_Callback(hObject, eventdata, handles)
 %Marking lines on the graphs    
     intervals = csv_to_mvar(get(handles.intervals,'String'));      
+    intervals = sort(intervals);
     %Clearing unmarked lines
     child_handles = allchild(handles.wt_pane);            
     for i = 1:size(child_handles,1)        
@@ -456,7 +457,7 @@ function wavlet_transform_Callback(hObject, eventdata, handles)
     handles.amp_arr = cell(n,1);
     %Calculating wavelet transform
     for p = 1:n
-        status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Tranform of Signal %d/%d',p,n));
+        status_Callback(hObject, eventdata, handles, sprintf('Calculating Wavelet Transform of Signal %d/%d',p,n));
         wtwrapper;
         WTamp = abs(WT);
         WTpow = abs(WT).^2;
@@ -581,6 +582,19 @@ function xyplot_Callback(hObject, eventdata, handles)
     set(handles.plot_pow,'Fontunits','normalized');
     set(handles.cum_avg,'Fontunits','normalized');
     guidata(hObject,handles);
+    
+function signal_list_KeyPressFcn(hObject, eventdata, handles)
+switch eventdata.Key
+    case 'r'
+        signal_selected = get(handles.signal_list,'Value');
+        if length(signal_selected)>1
+            return;
+        end        
+        list = get(handles.signal_list,'String');
+        str = cell2mat(inputdlg('Enter the new signal name'));
+        list{signal_selected,1} = str;
+        set(handles.signal_list,'String',list);
+end    
 % --------------------------------------------------------------------
 function file_Callback(hObject, eventdata, handles)
 %Loading data
