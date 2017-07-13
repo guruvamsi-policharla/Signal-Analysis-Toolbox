@@ -74,6 +74,8 @@ image(matlabImage)
 axis off
 axis image
 h = findall(0,'Type','uicontrol');
+set(h,'FontUnits','points');
+set(h,'FontSize',8);
 set(h,'FontUnits','normalized');
 handles.calc_type = 1;
 handles.plot_type = 2;
@@ -203,44 +205,7 @@ view(handles.plot3d,[str2double(get(handles.azimuthal,'String')),str2double(get(
 function sampling_rate_Callback(hObject, eventdata, handles)
 %Replots after changin sampling rate
     xyplot_Callback(hObject, eventdata, handles);
-
-% function intervals_Callback(hObject, eventdata, handles)
-% %Marking lines on the graphs    
-%     intervals = csv_to_mvar(get(handles.intervals,'String'));    
-%     clear_axes_lines(handles.plot3d);
-%     set(handles.plot3d,'YTickLabel',[]);
-%     set(handles.plot_pow,'YTickLabel',[]);
-%     grid(handles.plot_pow,'on');
-%     grid(handles.plot3d,'on');
-%     set(handles.plot3d, 'YTickMode', 'auto', 'YTickLabelMode', 'auto')
-%     if(size(intervals)>0)
-%         zval = 1;
-%         child_handles = allchild(handles.wt_pane);
-%         for i = 1:size(child_handles,1)
-%             
-%             if(strcmp(get(child_handles(i),'Type'),'axes'))
-%                 set(child_handles(i),'Ytick',intervals);
-%                 set(child_handles(i),'YTickLabel',intervals);
-%                 hold(child_handles(i),'on');                                          
-%                 for j = 1:size(intervals,2)
-%                     xl = get(child_handles(i),'xlim');
-%                     x = [xl(1) xl(2)];        
-%                     z = ones(1,size(x,2));
-%                     z = z.*zval;
-%                     y = intervals(j)*ones(1,size(x,2));
-%                     plot3(child_handles(i),x,y,z,'--k');
-%                 end                           
-%                 hold(child_handles(i),'off');
-%             end          
-%         end
-%     else
-%         child_handles = allchild(handles.plot_pow);
-%         for i = 1:size(child_handles,1)-1    
-%             if(strcmp(get(child_handles(i),'Type'),'line'))                                
-%                     delete(child_handles(i));                
-%             end
-%         end       
-%     end
+    
 function intervals_Callback(hObject, eventdata, handles)
 %Marking lines on the graphs    
     intervals = csv_to_mvar(get(handles.intervals,'String'));      
